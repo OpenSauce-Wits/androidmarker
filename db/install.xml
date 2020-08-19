@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- This is where any database tables required to save this plugins data
+are defined. File submissions define a table that links to submission and
+contains a column to record the number of files.
+(This description was copied from https://docs.moodle.org/dev/Assign_submission_plugins )-->
+<XMLDB PATH="mod/assign/feedback/androidmarker/db" VERSION="20120423" COMMENT="XMLDB file for Moodle mod/assign/feedback/androidmarker"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="assignfeedback_androidmarker" COMMENT="Info about Android Marker submissions for assignments.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="assignment_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="user_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="priority" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="status" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Status of the submission"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="The unique id for this submission info."/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="androidmarker_testresult" COMMENT="Info about the Android Marker test results.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="assignment_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="user_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="testname" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The name of the test"/>
+        <FIELD NAME="result" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Result of the marked test"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_assignment" TYPE="foreign" FIELDS="assignment_id" REFTABLE="assignfeedback_androidmarker" REFFIELDS="assignment_id" COMMENT="The assignment instance this test relates to"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="user_id" REFTABLE="assignfeedback_androidmarker" REFFIELDS="user_id"  COMMENT="The submission this file test relates to."/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="androidmarker_errors" COMMENT="Info about compilation errors while trying to compile the test classes.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="androidmarker_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="columnnumber" TYPE="int" LENGTH="4" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="linenumber" TYPE="int" LENGTH="5" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="message" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="position" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The character offset from the beginning of the source object that indicates the location of the problem."/>
+        <FIELD NAME="filename" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_androidmarker" TYPE="foreign" FIELDS="androidmarker_id" REFTABLE="assignfeedback_androidmarker" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+  </TABLES>
+</XMLDB>
