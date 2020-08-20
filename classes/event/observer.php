@@ -22,6 +22,8 @@
  */
 namespace assignfeedback_androidmarker\event;
 
+require_once($CFG->dirroot . "/mod/assign/feedback/androidmarker/lib.php");
+
 class observer {
     // Database table names.
     const TABLE_ASSIGNFEEDBACK_ANDROIDMARKER = "assignfeedback_androidmarker";
@@ -54,6 +56,7 @@ class observer {
      protected static function enter_student_record($event) {
          global $DB;
          $assignmentid = $event->get_record_snapshot($event->objecttable, $event->objectid)->assignment;
+         $submissionid = $event->get_record_snapshot($event->objecttable, $event->objectid)->submission;
          $userid = $event->userid;
 
          $updateData = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('user_id' => $userid, 'assignment_id' => $assignmentid));
@@ -74,10 +77,37 @@ class observer {
              $updateData = new \stdClass();
              $updateData->user_id = $userid;
              $updateData->assignment_id = $assignmentid;
+             $updateData->submission_id = $submissionid;
              $updateData->priority = 1;
              $updateData->status = get_string('pending', self::COMPONENT_NAME);
              $updateData->id = $DB->insert_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $updateData);
          }
+
+         $fs = get_file_storage();
+         $studentZIP = $fs->get_area_files($event->contextid,
+             "assignsubmission_file",
+             "submission_files",
+             $submissionid,
+             'id',
+             false);
+
+         if (empty($studentZIP)) {
+             \core\notification::warning("Could not get Student Zip");
+             return;
+         }
+
+         $studentZIP = reset($studentZIP);
+
+         // Always base64_encode the files
+         $studentZIP = base64_encode($studentZIP->get_content());
+
+         // languageid, source, input, output and timelimit
+         $data = array("submissiontype" => "StudentSubmission",
+         "StudentZip" => $studentZIP,
+         "user_id" => $userid,
+         "assignment_id" => $assignmentid);
+
+         send_submission($data);
      }
      /*
      $DB->update_record('onlinejudge_tasks', $task);

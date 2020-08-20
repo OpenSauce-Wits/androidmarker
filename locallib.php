@@ -31,6 +31,9 @@ define('ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP', 'zip_androidmarker');
 // File area for androidmarker requirements document to be uploaded by the teacher
 define('ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC', 'doc_androidmarker');
 
+
+require_once(dirname(__FILE__) . "/lib.php");
+
 /**
  * Library class for androidmarker feedback plugin extending feedback plugin base class.
  *
@@ -212,6 +215,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      */
     public function save_settings( stdClass $data) {
         global $USER;
+
         if (isset($data->androidmarkerzip) && isset($data->androidmarkerdoc)) { // This saves the lecturers zip
 
             file_save_draft_area_files($data->androidmarkerdoc, $this->assignment->get_context()->id,
@@ -241,7 +245,22 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
                 return true;
             }
 
-            $nothing = $this->insert_assignment_submission( $USER->id, -1, $this->assignment->get_instance()->id);
+            $nothing = $this->insert_assignment_submission( $USER->id, -1, $this->assignment->get_instance()->id, $this->assignment->get_context()->id);// Delete records
+
+            // Send the submission to the marker
+            $fileDOC = reset($fileDOC);
+            $fileZIP = reset($fileZIP);
+
+            // Always base64_encode the files
+            $fileDOC = base64_encode($fileDOC->get_content());
+            $fileZIP = base64_encode($fileZIP->get_content());
+
+            // languageid, source, input, output and timelimit
+            $data = array("submissiontype" => "LecturerSubmission", "RequiredDocuments" => $fileDOC,
+            "LecturerZip" => $fileZIP, "user_id" => $USER->id,
+            "assignment_id" => $this->assignment->get_instance()->id);
+
+            send_submission($data);
         }
         return true;
     }
@@ -347,7 +366,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     * @param int $assignmentid
     * @return stdClass
     */
-    public function insert_assignment_submission( $userid, $priority, $assignmentid){
+    public function insert_assignment_submission( $userid, $priority, $assignmentid, $submissionid){
       global $DB;
 
       $androidmarkersubmission = $this->get_androidmarker_submission($userid);
@@ -364,6 +383,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
           $androidmarkersubmission = new stdClass();
           $androidmarkersubmission->user_id = $userid;
           $androidmarkersubmission->assignment_id = $assignmentid;
+          $androidmarkersubmission->submission_id = $submissionid;
           $androidmarkersubmission->priority = $priority;
           $androidmarkersubmission->status = get_string('pending', self::COMPONENT_NAME);
           $androidmarkersubmission->id = $DB->insert_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $androidmarkersubmission);
@@ -901,67 +921,6 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
 
        }
      }
-
-
-    /*
-     *  This function marks the lecturer's mark_lecturer_project
-     *
-     */
-    public function mark_lecturer_project(){
-      global $CFG, $USER;
-
-      $fs = get_file_storage();
-
-      $fileDOC = $fs->get_area_files($this->assignment->get_context()->id,
-          self::COMPONENT_NAME,
-          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC,
-          0,
-          'id',
-          false);
-
-      $fileZIP = $fs->get_area_files($this->assignment->get_context()->id,
-          self::COMPONENT_NAME,
-          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP,
-          0,
-          'id',
-          false);
-
-      if (empty($fileZIP) || empty($fileDOC)) {
-          \core\notification::warning(get_string("no_files_warning", self::COMPONENT_NAME));
-          return true;
-      }
-
-      $moodledata = $dbhost = get_config(self::COMPONENT_NAME, "moodledata");
-      // Create an assignment directory everytime a submission is made
-      // create assignment directory
-      $path = $moodledata . DIRECTORY_SEPARATOR . $this->assignment->get_instance()->id."_".$USER->id;
-      if(is_dir($path)){
-        $this->remove_directory($path);
-      }
-      $this->create_secure_directory($path);
-
-      $fileDOC = reset($fileDOC);
-      $fileZIP = reset($fileZIP);
-
-      $MarkingScriptsDir = $CFG->dirroot .DIRECTORY_SEPARATOR."mod/assign/feedback/androidmarker/MarkingScripts";
-      $runTestOnEmulatorDir = $MarkingScriptsDir.DIRECTORY_SEPARATOR."runTestOnEmulator.sh";
-      $MarkProjectDir = $MarkingScriptsDir.DIRECTORY_SEPARATOR."MarkProject.sh";
-      $MarkDir = $MarkingScriptsDir.DIRECTORY_SEPARATOR."Mark.php";
-
-      // Copies the 7 needed documents
-      if(copy($runTestOnEmulatorDir,$path.DIRECTORY_SEPARATOR."runTestOnEmulator.sh") &&
-      copy($MarkDir,$path.DIRECTORY_SEPARATOR."Mark.php") &&
-      copy($MarkProjectDir,$path.DIRECTORY_SEPARATOR."MarkProject.sh")){
-        file_put_contents($path.DIRECTORY_SEPARATOR."RequiredDocuments.txt",$fileDOC->get_content());
-        file_put_contents($path.DIRECTORY_SEPARATOR."LecturerZip.zip",$fileZIP->get_content());
-        file_put_contents($path.DIRECTORY_SEPARATOR."StudentZip.zip",$fileZIP->get_content());
-        // Copies the 5 needed documents
-        //Creates a psuedo student submission
-
-        $this->mark_submission($path, $this->assignment->get_instance()->id . "_".$USER->id, $USER->id);
-
-      }
-    }
 
     function mark_submission($path, $submissionPath, $userid){
       global $DB, $CFG;

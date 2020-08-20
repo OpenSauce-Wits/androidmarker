@@ -56,10 +56,11 @@ class mark_submissions extends scheduled_task {
         global $CFG, $DB;
 
         require_once($CFG->dirroot . '/mod/assign/locallib.php');
+        require_once($CFG->dirroot . '/mod/assign/lib.php');
 
         /*
         * @Check if there are server to mark projects without
-        *
+        * Check if the available servers have the Submission_Manager.php script
         */
 
         /*
@@ -71,13 +72,48 @@ class mark_submissions extends scheduled_task {
         * of these.
         *
         * @ If one of these assignments are not marked then we can not mark the rest of the student submissions
-        *
+        * @ Check if the servers have the lecturer submission file
         */
 
         $LecturerSubmissions = $DB->get_records(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("priority" => -1));
         foreach ($LecturerSubmissions as $LecturerSubmission) {
           if($LecturerSubmission->status == get_string('pending', self::COMPONENT_NAME)){
+            // A lecture submission has not been marked. Send the submission to the server.
+            $fs = get_file_storage();
+            $fileDOC = $fs->get_area_files($LecturerSubmission->submission_id,
+                self::COMPONENT_NAME,
+                ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC,
+                0,
+                'id',
+                false);
 
+            $fileZIP = $fs->get_area_files($LecturerSubmission->submission_id,
+                self::COMPONENT_NAME,
+                ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP,
+                0,
+                'id',
+                false);
+
+            if (empty($fileZIP) || empty($fileDOC)) {
+                \core\notification::warning(get_string("no_files_warning", self::COMPONENT_NAME));
+                return true;
+            }
+
+            $fileDOC = reset($fileDOC);
+            $fileZIP = reset($fileZIP);
+
+            // Always base64_encode the files
+            $fileDOC = base64_encode($fileDOC->get_content());
+            $fileZIP = base64_encode($fileZIP->get_content());
+            //Creates a psuedo student submission
+            $fileSUB = base64_encode($fileZIP->get_content());
+
+            // languageid, source, input, output and timelimit
+            $data = array("submissiontype" => "LecturerSubmission", "RequiredDocuments" => $fileDOC,
+            "LecturerZip" => $fileZIP, "StudentZip" => $fileSUB, "user_id" => $LecturerSubmission->user_id,
+            "assignment_id" => $LecturerSubmission->assignment_id);
+
+            send_submission($data);
           }
         }
 
@@ -117,7 +153,7 @@ class mark_submissions extends scheduled_task {
         $s = curl_init();
 
         //curl_setopt($s,CURLOPT_URL, $wsbaseaddress.DIRECTORY_SEPARATOR.$submissionPath.DIRECTORY_SEPARATOR."Mark.php");
-        curl_setopt($s,CURLOPT_URL, $wsbaseaddress.DIRECTORY_SEPARATOR."Mark.php");
+        curl_setopt($s,CURLOPT_URL, $wsbaseaddress.DIRECTORY_SEPARATOR."Submission_Manager.php");
         // Enable the post response.
         curl_setopt($s, CURLOPT_POST, true);
 
@@ -128,7 +164,7 @@ class mark_submissions extends scheduled_task {
         $sdk = get_config(self::COMPONENT_NAME, "sdk_path");
 
         // Setup request to send json via POST
-      /*  $data = array('UserID' => $userid,
+        $data = array('UserID' => $userid,
           'AssignmentID' => $this->assignment->get_instance()->id,
           'assignfeedback_androidmarker' => self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,
           'androidmarker_testresult' => self::TABLE_ANDROIDMARKER_TESTRESULT,
@@ -137,7 +173,7 @@ class mark_submissions extends scheduled_task {
           'dbuser' => $dbuser,
           'dbpass' => $dbpass,
           'db' => $db,
-          'sdk' => $sdk);*/
+          'sdk' => $sdk);
 
         // Attach encoded JSON string to the POST fields
         //curl_setopt($s, CURLOPT_POSTFIELDS, json_encode($data));
@@ -243,5 +279,4 @@ class mark_submissions extends scheduled_task {
 
         }*/
     }
-
 }

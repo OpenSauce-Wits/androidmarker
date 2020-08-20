@@ -23,6 +23,12 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
+const TABLE_ASSIGNFEEDBACK_ANDROIDMARKER = "assignfeedback_androidmarker";
+const TABLE_ANDROIDMARKER_TESTRESULT = "androidmarker_testresult";
+const TABLE_ANDROIDMARKER_COMPILATIONERROR = "androidmarker_errors";
+
+const COMPONENT_NAME = "assignfeedback_androidmarker";
+
 /**
  * Serves assignment feedback and other files.
  *
@@ -69,4 +75,26 @@ function assignfeedback_androidmarker_pluginfile($course, $cm, context $context,
     }
     // Download MUST be forced - security!
     send_stored_file($file, 0, 0, true);
+}
+
+function send_submission($data){
+  // json_encode the object to send to the marker
+  $data_string = json_encode($data);
+  $url = get_config(COMPONENT_NAME, "wsbase").DIRECTORY_SEPARATOR. "Submission_Manager.php" ;
+  // Post the data to the marker
+  $options = array(
+      'http' => array(
+          'method' => 'POST',
+          'content' => $data_string,
+          'header' => "Content-Type: application/json\r\n" .
+          "Accept: application/json\r\n"
+      )
+  );
+
+  $context = stream_context_create($options);
+  $result = file_get_contents($url, false, $context);
+  $response = json_decode($result);
+
+  // Show the response
+  //var_dump($response);
 }

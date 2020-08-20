@@ -31,7 +31,7 @@
  // We will not be using this code but we can adapt it.
  $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/wsbase",
      new lang_string("wsbase", "assignfeedback_androidmarker"),
-     new lang_string("wsbase_help", "assignfeedback_androidmarker"), "0.0.0.0:9999"));
+     new lang_string("wsbase_help", "assignfeedback_androidmarker"), "http://0.0.0.0:9999"));
 
  // Database Host Server
  $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/database_host",
