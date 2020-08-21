@@ -40,12 +40,6 @@ require_once(dirname(__FILE__) . "/lib.php");
  * @package   assignfeedback_androidmarker
  */
 class assign_feedback_androidmarker extends assign_feedback_plugin {
-    // Database table names.
-    const TABLE_ASSIGNFEEDBACK_ANDROIDMARKER = "assignfeedback_androidmarker";
-    const TABLE_ANDROIDMARKER_TESTRESULT = "androidmarker_testresult";
-    const TABLE_ANDROIDMARKER_COMPILATIONERROR = "androidmarker_errors";
-
-    const COMPONENT_NAME = "assignfeedback_androidmarker";
 
     /**
      * Get the name of the androidmarker feedback plugin.
@@ -53,7 +47,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      * @return string
      */
     public function get_name() {
-        return get_string('androidmarker', self::COMPONENT_NAME);
+        return get_string('androidmarker', COMPONENT_NAME);
     }
 
     /**
@@ -176,7 +170,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      */
     public function get_androidmarker_feedback($userid) {
         global $DB;
-        return $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('user_id' => $userid, 'assignment_id' => $this->assignment->get_instance()->id));
+        return $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('user_id' => $userid, 'assignment_id' => $this->assignment->get_instance()->id));
     }
 
     /**
@@ -187,7 +181,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      */
     public function get_settings(MoodleQuickForm $mform) {
         // Zip file with the lecturers entire android project
-        $nameRequiredDoc = get_string("setting_required_documents", self::COMPONENT_NAME);
+        $nameRequiredDoc = get_string("setting_required_documents", COMPONENT_NAME);
         $fileoptionsRequiredDoc = $this->get_required_documents_options();
         $mform->addElement("filemanager", "androidmarkerdoc", $nameRequiredDoc, null, $fileoptionsRequiredDoc);
         $mform->addHelpButton("androidmarkerdoc",
@@ -195,7 +189,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
             "assignfeedback_androidmarker");
 
         // Text file that specifies the student file submissions
-        $nameLecturerZip = get_string("setting_lecturer_project", self::COMPONENT_NAME);
+        $nameLecturerZip = get_string("setting_lecturer_project", COMPONENT_NAME);
         $fileoptionsLecturerZip = $this->get_lecturer_zip_options();
         $mform->addElement("filemanager", "androidmarkerzip", $nameLecturerZip, null, $fileoptionsLecturerZip);
         $mform->addHelpButton("androidmarkerzip",
@@ -214,38 +208,38 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      * @return bool
      */
     public function save_settings( stdClass $data) {
-        global $USER;
+        global $USER, $CFG;
 
         if (isset($data->androidmarkerzip) && isset($data->androidmarkerdoc)) { // This saves the lecturers zip
 
             file_save_draft_area_files($data->androidmarkerdoc, $this->assignment->get_context()->id,
-                self::COMPONENT_NAME, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC, 0);
+                COMPONENT_NAME, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC, 0);
 
             file_save_draft_area_files($data->androidmarkerzip, $this->assignment->get_context()->id,
-                self::COMPONENT_NAME, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP, 0);
+                COMPONENT_NAME, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP, 0);
 
             $fs = get_file_storage();
 
             $fileDOC = $fs->get_area_files($this->assignment->get_context()->id,
-                self::COMPONENT_NAME,
+                COMPONENT_NAME,
                 ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC,
                 0,
                 'id',
                 false);
 
             $fileZIP = $fs->get_area_files($this->assignment->get_context()->id,
-                self::COMPONENT_NAME,
+                COMPONENT_NAME,
                 ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP,
                 0,
                 'id',
                 false);
 
             if (empty($fileZIP) || empty($fileDOC)) {
-                \core\notification::warning(get_string("no_files_warning", self::COMPONENT_NAME));
+                \core\notification::warning(get_string("no_files_warning", COMPONENT_NAME));
                 return true;
             }
 
-            $nothing = $this->insert_assignment_submission( $USER->id, -1, $this->assignment->get_instance()->id, $this->assignment->get_context()->id);// Delete records
+            $updateData = $this->insert_assignment_submission( $USER->id, -1, $this->assignment->get_instance()->id, $this->assignment->get_context()->id);// Delete records
 
             // Send the submission to the marker
             $fileDOC = reset($fileDOC);
@@ -256,9 +250,14 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
             $fileZIP = base64_encode($fileZIP->get_content());
 
             // languageid, source, input, output and timelimit
-            $data = array("submissiontype" => "LecturerSubmission", "RequiredDocuments" => $fileDOC,
-            "LecturerZip" => $fileZIP, "user_id" => $USER->id,
-            "assignment_id" => $this->assignment->get_instance()->id);
+            $data = array("submissiontype" => "LecturerSubmission",
+            "id" => $updateData->id,
+            "RequiredDocuments" => $fileDOC,
+            "LecturerZip" => $fileZIP,
+            "user_id" => $USER->id,
+            "assignment_id" => $this->assignment->get_instance()->id,
+            "priority" => $updateData->priority,
+            "url" => $CFG->wwwroot . "/mod/assign/feedback/androidmarker/process_result.php");
 
             send_submission($data);
         }
@@ -277,10 +276,10 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         $draftitemidDoc = file_get_submitted_draft_itemid('androidmarkerdoc');
 
         file_prepare_draft_area($draftitemidZip, $this->assignment->get_context()->id,
-            self::COMPONENT_NAME, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP,
+            COMPONENT_NAME, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP,
             0, array('subdirs' => 0));
         file_prepare_draft_area($draftitemidDoc, $this->assignment->get_context()->id,
-            self::COMPONENT_NAME, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC,
+            COMPONENT_NAME, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC,
             0, array('subdirs' => 0));
 
         $defaultvalues['androidmarkerzip'] = $draftitemidZip;
@@ -318,7 +317,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      * @param int $userid The userid we are currently grading
      * @return bool true if elements were added to the form
      */
-    public function get_form_elements_for_user($grade, MoodleQuickForm $mform, stdClass $data, $userid) { // Not sure what this function does
+    public function get_form_elements_for_user($grade, MoodleQuickForm $mform, stdClass $data, $userid) {
       // This function shows output in the grader form. where you can save and next and stuff for each individual student
 
 
@@ -335,15 +334,15 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
             'tasks',
             $fileoptions,
             $this->assignment->get_context(),
-            self::COMPONENT_NAME,
+            COMPONENT_NAME,
             ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION,
             $gradeid);
 
-        $name = get_string("androidmarker_submission", self::COMPONENT_NAME);
+        $name = get_string("androidmarker_submission", COMPONENT_NAME);
         $mform->addElement('filemanager', 'tasks_filemanager', $name, null, $fileoptions);
         $mform->addHelpButton("tasks_filemanager",
             "androidmarker_submission",
-            self::COMPONENT_NAME);
+            COMPONENT_NAME);
 
         return true;
     }
@@ -356,7 +355,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      */
     private function get_androidmarker_submission($userid) {
         global $DB;
-        return $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('user_id' => $userid, 'assignment_id' => $this->assignment->get_instance()->id));
+        return $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('user_id' => $userid, 'assignment_id' => $this->assignment->get_instance()->id));
     }
 
     /**
@@ -385,8 +384,8 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
           $androidmarkersubmission->assignment_id = $assignmentid;
           $androidmarkersubmission->submission_id = $submissionid;
           $androidmarkersubmission->priority = $priority;
-          $androidmarkersubmission->status = get_string('pending', self::COMPONENT_NAME);
-          $androidmarkersubmission->id = $DB->insert_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $androidmarkersubmission);
+          $androidmarkersubmission->status = get_string('pending', COMPONENT_NAME);
+          $androidmarkersubmission->id = $DB->insert_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $androidmarkersubmission);
       }
 
       return $androidmarkersubmission;
@@ -436,7 +435,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         $fs = get_file_storage();
 
         $files = $fs->get_area_files($this->assignment->get_context()->id,
-            self::COMPONENT_NAME,
+            COMPONENT_NAME,
             ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION,
             $submission->id,
             'timemodified',
@@ -456,11 +455,12 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     /**
      * Display the list of feedback androidmarker files in the feedback status table.
      *
-     * @param stdClass $user
-     * @param bool $showviewlink - Set to true to show a link to see the full list of files
-     * @return string
+     * @param stdClass $grade
+     * @param $showviewlink
+     * @return string - return a string representation of the submission status.
+     * @throws coding_exception
      */
-    public function view_summary(stdClass $user, & $showviewlink) {
+    public function view_summary(stdClass $grade, & $showviewlink) {
       /*
         The view_summary function is called to display a summary of the
         submission to both markers and students. It counts the number of
@@ -477,9 +477,9 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
       //debugging("My OUtput: " . $PAGE->url->get_param("action"));
 
       if ($PAGE->url->get_param("action") == "grading") {
-          return $this->view_grading_summary($user, $showviewlink);
+          return $this->view_grading_summary($grade->userid, $showviewlink);
       } else {
-          return $this->view_submission_summary($user->id);
+          return $this->view_submission_summary($grade->userid);
       }
 
       // This should be put in the view_submission_summary function
@@ -553,8 +553,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
             $url = new moodle_url('/mod/assign/feedback/onlinejudge/rejudge.php', array('id' => $cmid, 'a' => $this->assignment->get_instance()->id));
             $output .= "<a href='$url' class='btn btn-info' type='button'>" . get_string('runmarker', 'assignfeedback_androidmarker') . "</a>";
 
-            $url = new moodle_url('<php?
-              \core\notification::warning(shell_exec("adb devices")); ?>', array('id' => $cmid, 'a' => $this->assignment->get_instance()->id));
+            $url = new moodle_url('/mod/assign/feedback/onlinejudge/rejudge.php', array('id' => $cmid, 'a' => $this->assignment->get_instance()->id));
             $output .= "<a href='$url' class='btn btn-info' type='button'>" . get_string('remarkallprojects', 'assignfeedback_androidmarker') . "</a>";
         //}
         $output .= '</div>';
@@ -573,8 +572,8 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         global $DB;
         $showviewlink = true;
 
-        $testresults = $DB->get_records(self::TABLE_ANDROIDMARKER_TESTRESULT, array("user_id" => $userid, "assignment_id" => $this->assignment->get_instance()->id));
-        $comperrorcount = $DB->count_records(self::TABLE_ANDROIDMARKER_COMPILATIONERROR, array("user_id" => $userid, "assignment_id" => $this->assignment->get_instance()->id));
+        $testresults = $DB->get_records(TABLE_ANDROIDMARKER_TESTRESULT, array("user_id" => $userid, "assignment_id" => $this->assignment->get_instance()->id));
+        $comperrorcount = $DB->count_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("user_id" => $userid, "assignment_id" => $this->assignment->get_instance()->id));
         $result = $this->get_testresult_percentage($testresults, $comperrorcount);
         $result = html_writer::div($result, "feedbackandroidmarkergrading");
 
@@ -619,11 +618,11 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         global $DB;
         $html = "";
 
-        $html .= $this->assignment->render_area_files(self::COMPONENT_NAME,
+        $html .= $this->assignment->render_area_files(COMPONENT_NAME,
             ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION,
             $userid);
 
-        $androidmarkersubmission = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("user_id" => $userid));
+        $androidmarkersubmission = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("user_id" => $userid));
 
         if($androidmarkersubmission == NULL || $androidmarkersubmission->status == NULL){
           return $html;
@@ -639,10 +638,10 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         $table->data[] = array($item_name, $item);
 
         // If the status is not equal to marking we can display the results.
-        if($androidmarkersubmission->status !== get_string('marking', self::COMPONENT_NAME) &&
-           $androidmarkersubmission->status !== get_string('pending', self::COMPONENT_NAME)){
-          $testresults = $DB->get_records(self::TABLE_ANDROIDMARKER_TESTRESULT, array("user_id" => $userid, "assignment_id" => $this->assignment->get_instance()->id));
-          //$compilationerrors = $DB->get_records(self::TABLE_ANDROIDMARKER_COMPILATIONERROR, array("androidmarker_id" => $androidmarkersubmission->id));
+        if($androidmarkersubmission->status !== get_string('marking', COMPONENT_NAME) &&
+           $androidmarkersubmission->status !== get_string('pending', COMPONENT_NAME)){
+          $testresults = $DB->get_records(TABLE_ANDROIDMARKER_TESTRESULT, array("user_id" => $userid, "assignment_id" => $this->assignment->get_instance()->id));
+          //$compilationerrors = $DB->get_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("androidmarker_id" => $androidmarkersubmission->id));
 
 
           $item_name = "Overall results:";
@@ -703,7 +702,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     private function count_files($gradeid, $area) {
         $fs = get_file_storage();
         $files = $fs->get_area_files($this->assignment->get_context()->id,
-            self::COMPONENT_NAME,
+            COMPONENT_NAME,
             $area,
             $gradeid,
             'id',
@@ -753,14 +752,30 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     }
 
     /**
-     * Display the list of feedback androidmarker files in the feedback status table.
-     *
-     * @param stdClass $grade
-     * @return string
+    * Display judge info about the submission
+    * @param stdClass grade data
+    * @return string - return a string representation of the submission in full
+    * @throws coding_exception
+    * @throws moodle_exception
      */
     public function view(stdClass $grade) {
+      //\core\notification::warning("This is where the feed back is at");
+      return $this->view_submission_summary($grade->userid);
+    /*  $table = new html_table();
+    //  $table->id = 'assignment_onlinejudge_summary';
+      $table->attributes['class'] = 'generaltable';
+      $table->size = array('30%', '80%');
+      $submission = $this->assignment->get_user_submission($grade->userid, false);
+      //$onlinejudge_result = get_onlinejudge_result($submission, $this->assignment->get_instance()->grade);
+      // Status
+      $item_name =  "Yes ";
+      $item = "Boys";
+      $table->data[] = array($item_name, $item);
+
+      $output = html_writer::table($table);
+      return $output;
         $filearea = \local_androidmarker\api\base::ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA;
-        return $this->assignment->render_area_files('assignfeedback_androidmarker', $filearea, $grade->id);
+        return $this->assignment->render_area_files('assignfeedback_androidmarker', $filearea, $grade->id);*/
     }
 
     /**
@@ -778,19 +793,19 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         global $DB;
         $assignmentid = $this->assignment->get_instance()->id;
 
-        $androidmarker = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('assignment_id' => $assignmentid), "id");
+        $androidmarker = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('assignment_id' => $assignmentid), "id");
 
         if ($androidmarker) {
             //$this->delete_test_data($assignmentid, $androidmarker->id);
         }
 
         // Delete androidmarker assignment.
-        $DB->delete_records(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("assignment_id" => $assignmentid));
+        $DB->delete_records(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("assignment_id" => $assignmentid));
 
 
-        $wsbaseaddress = get_config(self::COMPONENT_NAME, "wsbase");
+        $wsbaseaddress = get_config(COMPONENT_NAME, "wsbase");
         if (empty($wsbaseaddress)) {
-            \core\notification::error(get_string("wsbase_not_set", self::COMPONENT_NAME));
+            \core\notification::error(get_string("wsbase_not_set", COMPONENT_NAME));
             return true;
         }
 
@@ -807,22 +822,22 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     private function delete_test_data($assignmentid, $userid) {
         global $DB;
 
-        $updateData = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("assignment_id" => $assignmentid, "user_id" => $userid), "id", IGNORE_MISSING);
+        $updateData = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("assignment_id" => $assignmentid, "user_id" => $userid), "id", IGNORE_MISSING);
         if (!$updateData) {
             return true;
         }
 
         // Update the assignfeedback_androidmarker table to Pending
-        $updateData->status = get_string('pending', self::COMPONENT_NAME);
-        $DB->update_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,
+        $updateData->status = get_string('pending', COMPONENT_NAME);
+        $DB->update_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,
                             $updateData,
                             $bulk=false);
 
         // Delete compilation errors.
-        //$DB->delete_records(self::TABLE_ANDROIDMARKER_COMPILATIONERROR, array("androidmarker_id" => $androidmarkerid));
+        //$DB->delete_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("androidmarker_id" => $androidmarkerid));
 
         // Delete test results.
-        $DB->delete_records(self::TABLE_ANDROIDMARKER_TESTRESULT, array("assignment_id" => $assignmentid, "user_id" => $userid));
+        $DB->delete_records(TABLE_ANDROIDMARKER_TESTRESULT, array("assignment_id" => $assignmentid, "user_id" => $userid));
 
         return true;
     }
@@ -848,203 +863,9 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      */
     public function get_file_areas() {
         return array(
-          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION => get_string("androidmarker_submissions_fa", self::COMPONENT_NAME),
-          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP => get_string("androidmarker_zip_fa", self::COMPONENT_NAME),
-          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC => get_string("androidmarker_requirement_document_fa", self::COMPONENT_NAME)
+          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION => get_string("androidmarker_submissions_fa", COMPONENT_NAME),
+          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP => get_string("androidmarker_zip_fa", COMPONENT_NAME),
+          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC => get_string("androidmarker_requirement_document_fa", COMPONENT_NAME)
         );
     }
-
-    /*
-     * This function marks the student's project
-     *
-     */
-     public function mark_student_project($userid){
-       global $CFG;
-
-       $fs = get_file_storage();
-
-       $fileDOC = $fs->get_area_files($this->assignment->get_context()->id,
-           self::COMPONENT_NAME,
-           ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC,
-           0,
-           'id',
-           false);
-
-       $fileZIP = $fs->get_area_files($this->assignment->get_context()->id,
-           self::COMPONENT_NAME,
-           ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP,
-           0,
-           'id',
-           false);
-
-      // get the student's zip too
-      $fileSTU = $fs->get_area_files($this->assignment->get_context()->id,
-          self::COMPONENT_NAME,
-          ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION,
-          $userid,
-          'id',
-          false);
-
-       if (empty($fileZIP) || empty($fileDOC) || empty($fileSTU)) {
-           \core\notification::warning(get_string("no_files_warning", self::COMPONENT_NAME));
-           return true;
-       }
-
-       $moodledata = $dbhost = get_config(self::COMPONENT_NAME, "moodledata");
-       // Create an assignment directory everytime a submission is made
-       // create assignment directory
-       $path = $moodledata . DIRECTORY_SEPARATOR . $this->assignment->get_instance()->id."_".$userid;
-       if(is_dir($path)){
-         $this->remove_directory($path);
-       }
-       $this->create_secure_directory($path);
-
-       $fileDOC = reset($fileDOC);
-       $fileZIP = reset($fileZIP);
-       $fileSTU = reset($fileSTU);
-
-       $MarkingScriptsDir = $CFG->dirroot .DIRECTORY_SEPARATOR."mod/assign/feedback/androidmarker/MarkingScripts";
-       $runTestOnEmulatorDir = $MarkingScriptsDir.DIRECTORY_SEPARATOR."runTestOnEmulator.sh";
-       $MarkProjectDir = $MarkingScriptsDir.DIRECTORY_SEPARATOR."MarkProject.sh";
-       $MarkDir = $MarkingScriptsDir.DIRECTORY_SEPARATOR."Mark.php";
-
-       // Copies the 7 needed documents
-       if(copy($runTestOnEmulatorDir,$path.DIRECTORY_SEPARATOR."runTestOnEmulator.sh") &&
-       copy($MarkDir,$path.DIRECTORY_SEPARATOR."Mark.php") &&
-       copy($MarkProjectDir,$path.DIRECTORY_SEPARATOR."MarkProject.sh")){
-         file_put_contents($path.DIRECTORY_SEPARATOR."RequiredDocuments.txt",$fileDOC->get_content());
-         file_put_contents($path.DIRECTORY_SEPARATOR."LecturerZip.zip",$fileZIP->get_content());
-         file_put_contents($path.DIRECTORY_SEPARATOR."StudentZip.zip",$fileSTU->get_content());
-         // Copies the 5 needed documents
-
-         $this->mark_submission($path, $this->assignment->get_instance()->id."_".$userid, $userid);
-
-       }
-     }
-
-    function mark_submission($path, $submissionPath, $userid){
-      global $DB, $CFG;
-      // Delete records
-      $DB->delete_records(self::TABLE_ANDROIDMARKER_TESTRESULT, array("assignment_id" => $this->assignment->get_instance()->id, "user_id" => $userid));
-
-      $wsbaseaddress = get_config(self::COMPONENT_NAME, "wsbase");
-
-      $s = curl_init();
-
-      curl_setopt($s,CURLOPT_URL, $wsbaseaddress.DIRECTORY_SEPARATOR.$submissionPath.DIRECTORY_SEPARATOR."Mark.php");
-      // Enable the post response.
-      curl_setopt($s, CURLOPT_POST, true);
-
-      $dbhost = get_config(self::COMPONENT_NAME, "database_host");
-      $dbuser = get_config(self::COMPONENT_NAME, "database_user");
-      $dbpass = get_config(self::COMPONENT_NAME, "database_password");
-      $db = get_config(self::COMPONENT_NAME, "database_database");
-      $sdk = get_config(self::COMPONENT_NAME, "sdk_path");
-
-      // Setup request to send json via POST
-      $data = array('UserID' => $userid,
-        'AssignmentID' => $this->assignment->get_instance()->id,
-        'assignfeedback_androidmarker' => self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,
-        'androidmarker_testresult' => self::TABLE_ANDROIDMARKER_TESTRESULT,
-        'androidmarker_errors' => self::TABLE_ANDROIDMARKER_COMPILATIONERROR,
-        'dbhost' => $dbhost,
-        'dbuser' => $dbuser,
-        'dbpass' => $dbpass,
-        'db' => $db,
-        'sdk' => $sdk);
-
-      // Attach encoded JSON string to the POST fields
-      curl_setopt($s, CURLOPT_POSTFIELDS, json_encode($data));
-
-      // Set the content type to application/json
-      curl_setopt($s, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-      curl_exec($s);
-      curl_close($s);
-
-      /*
-      $info = $curl->get_info();
-      if ($info["http_code"] == 200 || $info["http_code"] == 201) {
-          // Code 201 is for successful file transfer
-          return $response;
-      }
-
-      // Something went wrong.
-      debugging("ANDROIDMARKER: Post file to server was not successful: http_code=" . $info["http_code"]);
-
-      switch($info['http_code']) {
-      //  case 0:
-      //    \core\notification::error("No Server Permission (Error: 0)");
-        //  break;
-        case 400:
-          \core\notification::error(get_string("badrequesterror", self::COMPONENT_NAME));
-          break;
-        case 401:
-          \core\notification::error("Unauthorized (Error: 401)");
-          break;
-        case 403:
-          \core\notification::error("Forbidden (Error: 403)");
-          break;
-        case 404:
-          \core\notification::error(get_string("notfounderror", self::COMPONENT_NAME));
-          break;
-        case 500:
-          \core\notification::error("Internal Server Error (Error: 500)");
-          break;
-        case 501:
-          \core\notification::error("Server does not support the functionality of the Android Marker");
-        default:
-          \core\notification::error($info["http_code"]);
-          break;
-      }
-      */
-
-      // Adds it to the queue
-      //$hostAdd = explode(':', $wsbaseaddress);
-      //$crontab = new Ssh2_crontab_manager($hostAdd[0], $hostAdd[1], "", "");
-      //$crontab->append_cronjob("30 8 * * 6 $path/MarkProject.sh");
-
-    /*  curl_setopt($s,CURLOPT_RETURNTRANSFER,1);
-      $testresults=json_decode(curl_exec($s),true);
-      curl_close($s);
-
-      // Close the server when process is finished
-      // shell_exec('kill $(ps aux | grep '.$wsbaseaddress." | awk '{print $2}')");
-
-      $this->remove_directory($path);
-
-      */
-    }
-
-
-    function create_directory($path) {
-        if (!is_dir($path)) {
-            mkdir($path, 0755, true);
-            return true;
-        }
-        return false;
-    }
-
-    function secure_directory($path) {
-        $content = '# Don\'t list directory contents
-    IndexIgnore *
-    # Disable script execution
-    AddHandler cgi-script .php .pl .jsp .asp .sh .cgi
-    Options -ExecCGI -Indexes';
-        file_put_contents($path . DIRECTORY_SEPARATOR . '.htaccess', $content);
-    }
-
-    function create_secure_directory($path) {
-        $created = $this->create_directory($path);
-        if ($created) {
-            $this->secure_directory($path);
-        }
-    }
-
-    function remove_directory($path) {
-        if (!is_dir($path)) {return;}
-        $files = glob($path . DIRECTORY_SEPARATOR . '{.,}*', GLOB_BRACE);
-        @array_map('unlink', $files);
-        @rmdir($path);
-    }
-
 }

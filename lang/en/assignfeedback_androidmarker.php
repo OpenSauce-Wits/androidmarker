@@ -47,6 +47,7 @@
  $string["androidmarker_submission_help"] = "A single ZIP file containing all the relevant java files and resources for this exercise.";
  $string["no_files_warning"] = "Submission type is \"Android Marker\" but project zip file and requirements textfile are not uploaded.";
  $string["submissionstatus"] = "Status";
+ $string["marked"] = "Marked";
  $string["marking"] = "Marking";
  $string["pending"] = "Pending";
 
@@ -55,18 +56,6 @@
  $string['default_help'] = 'When set, this feedback method is enabled by default for all new assignments.';
  $string["wsbase"] = "Base URL to the web service";
  $string["wsbase_help"] = "The base URL to the web service, where all the tests and submissions will be sent and evaluated.";
- $string["database_host"] = "Base URL to the Database server";
- $string["database_host_help"] = "This is the server where all the tables for the plug-in will be created.";
- $string["database_database"] = "Name of database";
- $string["database_database_help"] = "This is the name of the moodle database where your tables will be stored.";
- $string["database_user"] = "Username that has rights to the moodle database";
- $string["database_user_help"] = "This is the name (".'"user"@localhost) that you use to log into your databse.';
- $string["database_password"] = "Password";
- $string["database_password_help"] = "";
- $string["sdk_path"] = "Path to SDK";
- $string["sdk_path_help"] = "This is the path to the location where your android SDK is stored.";
- $string["moodledata"] = "Path to moodledata directory";
- $string["moodledata_help"] = "This is the path to the location where your moodle data is stored.";
 
  // Lecturer Server settings
  $string["runmarker"] = "Run Marker";

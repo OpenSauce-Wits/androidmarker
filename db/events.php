@@ -32,9 +32,4 @@ $observers = array(
         'eventname'   => 'assignsubmission_file\event\submission_updated',
         'callback'    => '\assignfeedback_androidmarker\event\observer::submission_updated',
     ),
-    // This is the event for when a curl is sent back from the server
-    /*array('eventname' => 'mod_onlinejudge\event\onlinejudge_task_judged',
-          'callback' => 'onlinejudge_task_judged',
-          'includefile' => '/mod/assign/feedback/onlinejudge/lib.php'
-    ),*/
 );

@@ -79,22 +79,18 @@ function assignfeedback_androidmarker_pluginfile($course, $cm, context $context,
 
 function send_submission($data){
   // json_encode the object to send to the marker
-  $data_string = json_encode($data);
   $url = get_config(COMPONENT_NAME, "wsbase").DIRECTORY_SEPARATOR. "Submission_Manager.php" ;
-  // Post the data to the marker
-  $options = array(
-      'http' => array(
-          'method' => 'POST',
-          'content' => $data_string,
-          'header' => "Content-Type: application/json\r\n" .
-          "Accept: application/json\r\n"
-      )
-  );
 
-  $context = stream_context_create($options);
-  $result = file_get_contents($url, false, $context);
-  $response = json_decode($result);
+  $s = curl_init();
+  curl_setopt($s, CURLOPT_URL, $url);
+  // Enable the post response.
+  curl_setopt($s, CURLOPT_POST, true);
 
-  // Show the response
-  //var_dump($response);
+  // Attach encoded JSON string to the POST fields
+  curl_setopt($s, CURLOPT_POSTFIELDS, json_encode($data));
+
+  // Set the content type to application/json
+  curl_setopt($s, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+  curl_exec($s);
+  curl_close($s);
 }

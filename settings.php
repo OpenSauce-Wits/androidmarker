@@ -32,33 +32,3 @@
  $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/wsbase",
      new lang_string("wsbase", "assignfeedback_androidmarker"),
      new lang_string("wsbase_help", "assignfeedback_androidmarker"), "http://0.0.0.0:9999"));
-
- // Database Host Server
- $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/database_host",
-     new lang_string("database_host", "assignfeedback_androidmarker"),
-     new lang_string("database_host_help", "assignfeedback_androidmarker"), "0.0.0.0"));
-
- // Database moodle database
- $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/database_database",
-     new lang_string("database_database", "assignfeedback_androidmarker"),
-     new lang_string("database_database_help", "assignfeedback_androidmarker"), "moodle"));
-
- // Database User
- $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/database_user",
-     new lang_string("database_user", "assignfeedback_androidmarker"),
-     new lang_string("database_user_help", "assignfeedback_androidmarker"), ""));
-
- // Database Password
- $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/database_password",
-     new lang_string("database_password", "assignfeedback_androidmarker"),
-     new lang_string("database_password_help", "assignfeedback_androidmarker"), ""));
-
- // SDK PATH
- $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/sdk_path",
-     new lang_string("sdk_path", "assignfeedback_androidmarker"),
-     new lang_string("sdk_path_help", "assignfeedback_androidmarker"), ""));
-
- // Moodledata PATH
- $settings->add(new admin_setting_configtext("assignfeedback_androidmarker/moodledata",
-     new lang_string("moodledata", "assignfeedback_androidmarker"),
-     new lang_string("moodledata_help", "assignfeedback_androidmarker"), ""));

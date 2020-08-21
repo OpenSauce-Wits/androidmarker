@@ -54,7 +54,7 @@ class observer {
      */
      // The lecturer submitting a helping file might end up here
      protected static function enter_student_record($event) {
-         global $DB;
+         global $DB, $CFG;
          $assignmentid = $event->get_record_snapshot($event->objecttable, $event->objectid)->assignment;
          $submissionid = $event->get_record_snapshot($event->objecttable, $event->objectid)->submission;
          $userid = $event->userid;
@@ -104,38 +104,12 @@ class observer {
          // languageid, source, input, output and timelimit
          $data = array("submissiontype" => "StudentSubmission",
          "StudentZip" => $studentZIP,
+         "id" => $updateData->id,
          "user_id" => $userid,
-         "assignment_id" => $assignmentid);
+         "assignment_id" => $assignmentid,
+         "priority" => $updateData->priority,
+         "url" => $CFG->wwwroot . "/mod/assign/feedback/androidmarker/process_result.php");
 
          send_submission($data);
      }
-     /*
-     $DB->update_record('onlinejudge_tasks', $task);
-     $context = context_module::instance($task->cmid);
-     $event = \mod_onlinejudge\event\onlinejudge_task_judged::create(array('context' => $context, 'objectid' => $task->id));
-     $event->add_record_snapshot('onlinejudge_tasks', $task);
-     $event->trigger();
-     */
-
-    /**
-     * Queue the submission for processing.
-     * @param \mod_assign\event\base $event The submission created/updated event.
-     */
-    protected static function queue_conversion($event) {
-        global $DB;
-
-        $submissionid = $event->other['submissionid'];
-        $submissionattempt = $event->other['submissionattempt'];
-        $fields = array( 'submissionid' => $submissionid, 'submissionattempt' => $submissionattempt);
-        $record = (object) $fields;
-
-        $exists = $DB->get_record('assignfeedback_editpdf_queue', $fields);
-        if (!$exists) {
-            $DB->insert_record('assignfeedback_editpdf_queue', $record);
-        } else {
-            // This submission attempt was already queued, so just reset the existing failure counter to ensure it gets processed.
-            $exists->attemptedconversions = 0;
-            $DB->update_record('assignfeedback_editpdf_queue', $exists);
-        }
-    }
 }
