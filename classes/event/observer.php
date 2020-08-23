@@ -84,7 +84,7 @@ class observer {
              $updateData = new \stdClass();
              $updateData->user_id = $userid;
              $updateData->assignment_id = $assignmentid;
-             $updateData->coursemodule_id = $AssignmentGradeData->id;
+             $updateData->grade_item_id = $AssignmentGradeData->id;
              $updateData->priority = 1;
              $updateData->status = get_string('pending', self::COMPONENT_NAME);
              $updateData->id = $DB->insert_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $updateData);
@@ -113,7 +113,7 @@ class observer {
          $data = array("submissiontype" => "StudentSubmission",
          "StudentZip" => $studentZIP,
          "id" => $updateData->id,
-         "coursemodule_id" => $AssignmentGradeData->id,
+         "grade_item_id" => $AssignmentGradeData->id,
          "user_id" => $userid,
          "assignment_id" => $assignmentid,
          "priority" => $updateData->priority,

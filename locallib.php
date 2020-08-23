@@ -161,7 +161,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
             "RequiredDocuments" => $fileDOC,
             "LecturerZip" => $fileZIP,
             "user_id" => $USER->id,
-            "coursemodule_id" => -1,
+            "grade_item_id" => -1,
             "assignment_id" => $this->assignment->get_instance()->id,
             "priority" => $updateData->priority,
             "url" => $CFG->wwwroot . "/mod/assign/feedback/androidmarker/process_result.php");
@@ -289,7 +289,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
           $androidmarkersubmission = new stdClass();
           $androidmarkersubmission->user_id = $userid;
           $androidmarkersubmission->assignment_id = $assignmentid;
-          $androidmarkersubmission->coursemodule_id = $cmid;
+          $androidmarkersubmission->grade_item_id = $cmid;
           $androidmarkersubmission->priority = $priority;
           $androidmarkersubmission->status = get_string('pending', COMPONENT_NAME);
           $androidmarkersubmission->id = $DB->insert_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $androidmarkersubmission);
