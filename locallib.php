@@ -51,116 +51,22 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     }
 
     /**
-     * If this plugin adds to the gradebook comments field, it must specify the format
-     * of the comment.
-     *
-     * (From weblib.php)
-     * define('FORMAT_MOODLE',   '0');   // Does all sorts of transformations and filtering
-     * define('FORMAT_HTML',     '1');   // Plain HTML (with some tags stripped)
-     * define('FORMAT_PLAIN',    '2');   // Plain text (even tags are printed in full)
-     * define('FORMAT_WIKI',     '3');   // Wiki-formatted text
-     * define('FORMAT_MARKDOWN', '4');   // Markdown-formatted
-     *
-     * Only one feedback plugin can push comments to the gradebook and that is chosen by the assignment
-     * settings page.
-     *
-     * @param stdClass $grade The grade
-     * @return int
-     */
-    /*public function format_for_gradebook(stdClass $grade) {
-        return FORMAT_MOODLE;
-    }*/
-
-    /**
-    * If this plugin adds to the gradebook comments field, it must format the text
-    * of the comment.
-    *
-    * Only one feedback plugin can push comments to the gradebook and that is chosen by the assignment
-    * settings page.
-    *
-    * @param stdClass $grade The grade
-    * @return string
-    */
-   /*public function text_for_gradebook(stdClass $grade) {
-       return '';
-   }*/
-
-   /**
-     * Return any files this plugin wishes to save to the gradebook.
-     *
-     * The array being returned should contain the necessary information to
-     * identify and copy the files.
-     *
-     * eg.
-     *
-     * [
-     *      'contextid' => $modulecontext->id,
-     *      'component' => ASSIGNFEEDBACK_XYZ_COMPONENT,
-     *      'filearea' => ASSIGNFEEDBACK_XYZ_FILEAREA,
-     *      'itemid' => $grade->id
-     * ]
-     *
-     * @param stdClass $grade The assign_grades object from the db
-     * @return array
-     */
-    /*public function files_for_gradebook(stdClass $grade) : array {
-        return [];
-    }*/
-
-    /**
-     * Override to indicate a plugin supports quickgrading.
-     *
-     * @return boolean - True if the plugin supports quickgrading
-     */
-  /*  public function supports_quickgrading() {
-        return false;
-    }*/
-
-    /**
      * Any extra validation checks needed for the settings
      * form for this feedback plugin should be added to this method.
      */
-    /*function form_validation($data) {
+    function form_validation($data) {
         global $CFG;
 
         $errors = array();
-        if (substr($data->language, -13) == 'sphere_engine') {
-            // sphere-engine does support multifiles
-            // TODO: allow multi-files submissions when sphere engine is used.
-            if ($data->assignsubmission_file_maxfiles > 1) {
-                $errors['Files Allowed'] = get_string('onefileonlyse', 'local_onlinejudge');
-            }
-
-            if (empty($data->clientid)) {
-                $errors['clientid'] = get_string('seclientidrequired', 'local_onlinejudge');
-            }
-            if (empty($data->accesstoken)) {
-                $errors['accesstoken'] = get_string('seclientidrequired', 'local_onlinejudge');
-            } else if (!empty($data->clientid)) { // test username and password
-                // requiring the sphere engine api files.
-                require_once($CFG->dirroot . "/local/onlinejudge/judge/sphere_engine/api/CompilersClientV4.php");
-                require_once($CFG->dirroot . "/local/onlinejudge/judge/sphere_engine/api/SphereEngineConnectionException.php");
-                require_once($CFG->dirroot . "/local/onlinejudge/judge/sphere_engine/api/SphereEngineResponseException.php");
-                require_once($CFG->dirroot . "/local/onlinejudge/judge/sphere_engine/api/vendor/autoload.php");
-                // define access parameters
-                $access_token = $data->accesstoken;
-                $end_point = $data->clientid;
-
-                $client = new CompilersClientV4($access_token, $end_point);
-
-                // API usage
-                try {
-                    $response = $client->test();
-                } catch (\SphereEngine\Api\SphereEngineResponseException $e) {
-                    if ($e->getCode() == 401 or $e->getCode() == 402) {
-                        $errors['accesstoken'] = get_string('seautherror', 'local_onlinejudge');
-                    }
-                }
-            }
-
+        if (!isset($data->androidmarkerzip)){
+          $errors['androidmarkerzip'] = get_string('no_lecturer_zip', COMPONENT_NAME);
         }
+        if (!isset($data->androidmarkerdoc)) {
+          $errors['androidmarkerdoc'] = get_string('no_lecturer_doc', COMPONENT_NAME);
+        }
+        // Check if the required documents are in the zip file;
         return $errors;
-    }*/
+    }
 
     /**
      * Get feedback AndroidMarker file information from the database.
@@ -208,7 +114,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      * @return bool
      */
     public function save_settings( stdClass $data) {
-        global $USER, $CFG;
+        global $USER, $CFG, $DB;
 
         if (isset($data->androidmarkerzip) && isset($data->androidmarkerdoc)) { // This saves the lecturers zip
 
@@ -238,8 +144,8 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
                 \core\notification::warning(get_string("no_files_warning", COMPONENT_NAME));
                 return true;
             }
-
-            $updateData = $this->insert_assignment_submission( $USER->id, -1, $this->assignment->get_instance()->id, $this->assignment->get_context()->id);// Delete records
+            $AssignmentGradeData = $DB->get_record('grade_items',array('iteminstance'=>$this->assignment->get_instance()->id));
+            $updateData = $this->insert_assignment_submission( $USER->id, -1, $this->assignment->get_instance()->id, -1);// Delete records
 
             // Send the submission to the marker
             $fileDOC = reset($fileDOC);
@@ -255,6 +161,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
             "RequiredDocuments" => $fileDOC,
             "LecturerZip" => $fileZIP,
             "user_id" => $USER->id,
+            "coursemodule_id" => -1,
             "assignment_id" => $this->assignment->get_instance()->id,
             "priority" => $updateData->priority,
             "url" => $CFG->wwwroot . "/mod/assign/feedback/androidmarker/process_result.php");
@@ -365,7 +272,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     * @param int $assignmentid
     * @return stdClass
     */
-    public function insert_assignment_submission( $userid, $priority, $assignmentid, $submissionid){
+    public function insert_assignment_submission( $userid, $priority, $assignmentid, $cmid){
       global $DB;
 
       $androidmarkersubmission = $this->get_androidmarker_submission($userid);
@@ -382,7 +289,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
           $androidmarkersubmission = new stdClass();
           $androidmarkersubmission->user_id = $userid;
           $androidmarkersubmission->assignment_id = $assignmentid;
-          $androidmarkersubmission->submission_id = $submissionid;
+          $androidmarkersubmission->coursemodule_id = $cmid;
           $androidmarkersubmission->priority = $priority;
           $androidmarkersubmission->status = get_string('pending', COMPONENT_NAME);
           $androidmarkersubmission->id = $DB->insert_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $androidmarkersubmission);
@@ -390,67 +297,6 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
 
       return $androidmarkersubmission;
     }
-
-    /**
-     * Save the feedback androidmarker files.
-     *
-     * @param stdClass $grade Grade data.
-     * @param stdClass $data
-     * @return bool True on successful save, false on error.
-     */
-    public function save(stdClass $submission, stdClass $data) {
-      // I think this function will be used to save the gradle log data.
-      // But thats not how this works. We will either have to display it on a different page
-      // or make an instance of the file assignment feedback plugin
-    /*  $fileoptions = $this->get_file_options();
-
-        // The element name may have been for a different user.
-        foreach ($data as $key => $value) {
-            if (strpos($key, 'files_') === 0 && strpos($key, '_filemanager')) {
-                $elementname = substr($key, 0, strpos($key, '_filemanager'));
-            }
-        }
-
-        $data = file_postupdate_standard_filemanager($data,
-                                                     $elementname,
-                                                     $fileoptions,
-                                                     $this->assignment->get_context(),
-                                                     'assignfeedback_file',
-                                                     ASSIGNFEEDBACK_FILE_FILEAREA,
-                                                     $grade->id);
-
-        return $this->update_file_count($grade);*/
-    }
-
-    /**
-     * Produce a list of files suitable for export that represent this feedback or submission
-     *
-     * @param stdClass $submission The submission
-     * @param stdClass $user The user record - unused
-     * @return array - return an array of files indexed by filename
-     */
-  /*  public function get_files(stdClass $submission, stdClass $user) {
-      // This is for the student
-        $result = array();
-        $fs = get_file_storage();
-
-        $files = $fs->get_area_files($this->assignment->get_context()->id,
-            COMPONENT_NAME,
-            ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION,
-            $submission->id,
-            'timemodified',
-            false);
-
-        foreach ($files as $file) {
-            // Do we return the full folder path or just the file name?
-            if (isset($submission->exportfullpath) && $submission->exportfullpath == false) {
-                $result[$file->get_filename()] = $file;
-            } else {
-                $result[$file->get_filepath().$file->get_filename()] = $file;
-            }
-        }
-        return $result;
-    }*/
 
     /**
      * Display the list of feedback androidmarker files in the feedback status table.
@@ -473,54 +319,27 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
       */
 
       // This is where the lecturers submission results should be shown
-      global $PAGE;
+      global $PAGE, $DB;
       //debugging("My OUtput: " . $PAGE->url->get_param("action"));
 
-      if ($PAGE->url->get_param("action") == "grading") {
+    /*  if ($PAGE->url->get_param("action") == "grading") {
           return $this->view_grading_summary($grade->userid, $showviewlink);
       } else {
           return $this->view_submission_summary($grade->userid);
+      }*/
+
+      $result = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,array("assignment_id" => $this->assignment->get_instance()->id, "user_id" => $grade->userid));
+
+      $output = "";
+      // Allowing view link to be rendered.
+      $showviewlink = true;
+      if($result){
+        $statusstyle = 'notifysuccess';
+        // 'notifyproblem'; When there is a problem
+        $statustext = html_writer::tag('span', get_string('status' . $result->status, COMPONENT_NAME), array('class' => $statusstyle));
+        $output .= $statustext;
       }
-
-      // This should be put in the view_submission_summary function
-      /*  global $USER;
-
-        // Show a view all link if the number of files is over this limit.
-        $count = $this->count_files($grade->id, \local_androidmarker\api\base::ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA);
-        $showviewlink = $count > \local_androidmarker\api\base::ASSIGNFEEDBACK_ANDROIDMARKER_MAXSUMMARYFILES;
-
-        try {
-            $androidmarkerapi = \local_androidmarker\api\base::getinstance();
-        } catch (\Exception $e) {
-            return $e->getMessage();
-        }
-
-        $o = '';
-
-        if ($count <= \local_androidmarker\api\base::ASSIGNFEEDBACK_ANDROIDMARKER_MAXSUMMARYFILES) {
-            if (($grade->grade !== null) && ($grade->grade >= 0)) {
-                if ($androidmarkerapi->is_logged_in()) {
-                    // Show a link to open the androidmarker page.
-                    $submission = $this->assignment->get_user_submission($grade->userid, false);
-                    $isteacher = $androidmarkerapi->is_teacher($this->assignment->get_course_module()->id, $USER->id);
-                    $o .= $androidmarkerapi->render_action_button(get_string('viewfeedback', 'assignfeedback_androidmarker'),
-                            $this->assignment->get_course_module()->id, true, $isteacher,
-                            $grade->userid, $submission ? $submission->id : 0, $grade->id);
-                } else {
-                    $o .= $androidmarkerapi->render_signin_widget();
-                    $o .= '<br/><br/><p>' . get_string('signinhelp2', 'assignfeedback_androidmarker') . '</p>';
-                }
-
-                // Show standard link to download zip package.
-                $o .= '<p>Download:</p>';
-                $filearea = \local_androidmarker\api\base::ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA;
-                $o .= $this->assignment->render_area_files('assignfeedback_androidmarker', $filearea, $grade->id);
-            }
-
-            return $o;
-        } else {
-            return get_string('countfiles', 'assignfeedback_androidmarker', $count);
-        }*/
+      return $output; // Always return since parent do so too
     }
 
     /**
@@ -618,19 +437,17 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         global $DB;
         $html = "";
 
-        $html .= $this->assignment->render_area_files(COMPONENT_NAME,
-            ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION,
-            $userid);
-
-        $androidmarkersubmission = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("user_id" => $userid));
+        $androidmarkersubmission = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("user_id" => $userid, "assignment_id" => $this->assignment->get_instance()->id));
 
         if($androidmarkersubmission == NULL || $androidmarkersubmission->status == NULL){
           return $html;
         }
+        //$html .= $this->heading(get_string('submissionfeedbackheading', COMPONENT_NAME), 3);
+
         $table = new html_table();
         $table->id = 'assignment_androidmarker_information';
         $table->attributes['class'] = 'generaltable';
-        $table->size = array('50%', '');
+        $table->size = array('40%', '80%');
 
         // This displays the status of the submission
         $item_name = get_string('submissionstatus', 'assignfeedback_androidmarker') . ':';
@@ -659,7 +476,6 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
               $item_name = $testname;
               $item = $testresult;
               $table->data[] = array($item_name, $item);
-              $html = html_writer::div($html);
           }
 
           /*if ($compilationerrors) {
@@ -688,7 +504,6 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
           }*/
         }
         $html .= html_writer::table($table);
-        $html = html_writer::div($html, "androidmarker_submission_view");
         return $html;
     }
 
@@ -712,46 +527,6 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     }
 
     /**
-     * Determine whether the plugin is being added to the front page.
-     *
-     * @return bool Whether the plugin is being added to the front page.
-     */
-    protected function isonfrontpage() {
-        if (!empty($this->assignment) && $this->assignment instanceof \assign) {
-            $coursectx = $this->assignment->get_course_context();
-            $coursectxvalid = (!empty($coursectx) && $coursectx instanceof \context_course) ? true : false;
-            if ($coursectxvalid === true && $coursectx->instanceid == SITEID) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Automatically disable plugin if we're on the front page.
-     *
-     * @return bool
-     */
-    public function is_enabled() {
-        if ($this->isonfrontpage() === true) {
-            return false;
-        }
-        return parent::is_enabled();
-    }
-
-    /**
-     * Automatically hide the setting for the feedback plugin.
-     *
-     * @return bool
-     */
-    public function is_configurable() {
-        if ($this->isonfrontpage() === true) {
-            return false;
-        }
-        return parent::is_configurable();
-    }
-
-    /**
     * Display judge info about the submission
     * @param stdClass grade data
     * @return string - return a string representation of the submission in full
@@ -760,22 +535,51 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      */
     public function view(stdClass $grade) {
       //\core\notification::warning("This is where the feed back is at");
-      return $this->view_submission_summary($grade->userid);
-    /*  $table = new html_table();
-    //  $table->id = 'assignment_onlinejudge_summary';
+      //$output = $this->view_submission_summary($grade->userid);
+      //return $output;
+
+      global $OUTPUT, $DB;
+      ///////////////////////////////////////////
+
+      $table = new html_table();
+      $table->id = 'assignment_onlinejudge_summary';
       $table->attributes['class'] = 'generaltable';
       $table->size = array('30%', '80%');
       $submission = $this->assignment->get_user_submission($grade->userid, false);
-      //$onlinejudge_result = get_onlinejudge_result($submission, $this->assignment->get_instance()->grade);
+      $onlinejudge_result = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('user_id' => $grade->userid,'assignment_id' => $this->assignment->get_instance()->id), "id");
       // Status
-      $item_name =  "Yes ";
-      $item = "Boys";
+      $item_name = get_string('status', COMPONENT_NAME) . $OUTPUT->help_icon('status', COMPONENT_NAME);
+      $item = get_string('notavailable');
+      if (isset($onlinejudge_result->status)) {
+          $itemstyle = 'label label-success' ;
+          // 'label label-warning'; FOR WRONG RESULTS
+          $item = html_writer::tag('h5', html_writer::tag('span', get_string('status' . $onlinejudge_result->status, COMPONENT_NAME), array('class' => $itemstyle)));
+      }
       $table->data[] = array($item_name, $item);
+      ///////////////////////////////////////////
+
+      // Judge time
+    /*  $item_name = get_string('judgetime', 'assignfeedback_onlinejudge');
+      $item = get_string('notavailable');
+      if (!empty($onlinejudge_result->judgetime)) {
+          $item = userdate($onlinejudge_result->judgetime) . '&nbsp(' . get_string('submittedearly', 'assign', format_time(time() - $onlinejudge_result->judgetime)) . ')';
+      }
+      $table->data[] = array($item_name, $item);*/
+      ///////////////////////////////////////////
 
       $output = html_writer::table($table);
       return $output;
-        $filearea = \local_androidmarker\api\base::ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA;
-        return $this->assignment->render_area_files('assignfeedback_androidmarker', $filearea, $grade->id);*/
+    }
+
+    /**
+     * The judge works as a daemon so there is nothing to be saved through the normal interface.
+     *
+     * @param stdClass $grade The grade.
+     * @param stdClass $data Form data from the feedback form.
+     * @return boolean - False
+     */
+    public function is_feedback_modified(stdClass $grade, stdClass $data) {
+        return false;
     }
 
     /**
@@ -843,17 +647,23 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
     }
 
     /**
-     * Return true if there are no feedback androidmarker files.
+     * Return true if there is no submission
      *
      * @param stdClass $grade
      */
     public function is_empty(stdClass $grade) {
+      global $DB;
       /*If a plugin has no submission data to show - it can return true from
       the is_empty function. This prevents a table row being added to the
       submission summary for this plugin. It is also used to check if a student
-      has tried to save an assignment with no data.
-      */
-      return $this->count_files($grade->id, ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_SUBMISSION) == 0;
+      has tried to save an assignment with no data.*/
+      $result = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,array("assignment_id" => $this->assignment->get_instance()->id, "user_id" => $grade->userid));
+      if($result){
+        return true;
+      }
+      else{
+        return false;
+      }
     }
 
     /**

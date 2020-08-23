@@ -34,22 +34,26 @@
  $string["setting_lecturer_project_help"] = "Lecturer Zip Submission";
  $string["setting_lecturer_project_help_help"] = "A single ZIP file containg the entire working Android project, which the students' submissions should be tested against.";
 
- // This si the label and help text for the requiredDocuments text files
+ // This IS the label and help text for the requiredDocuments text files
  $string["setting_required_documents"] = "Required Documents";
  $string["setting_required_documents_help"] = "Required Documents Submission";
  $string["setting_required_documents_help_help"] = "A text file with the names and extensions of the files the student should submit.";
 
- $string["wsbase_not_set"] = "The JUnit Exercise Corrector web service base URL is not configured.";
+ $string["wsbase_not_set"] = "The web service base URL is not configured.";
  $string["unexpectederror"] = "An unexpected error occured.";
  $string["badrequesterror"] = "The server could not process the request. Probably the submitted ZIP file is corrupted.";
  $string["notfounderror"] = "Web server URL not found.";
  $string["androidmarker_submission"] = "Excercise ZIP";
  $string["androidmarker_submission_help"] = "A single ZIP file containing all the relevant java files and resources for this exercise.";
  $string["no_files_warning"] = "Submission type is \"Android Marker\" but project zip file and requirements textfile are not uploaded.";
+ $string["no_lecturer_zip"] = "Submission type is \"Android Marker\" but project zip file and requirements textfile are not uploaded.";
+ $string["no_lecturer_doc"] = "Submission type is \"Android Marker\" but project zip file and requirements textfile are not uploaded.";
  $string["submissionstatus"] = "Status";
  $string["marked"] = "Marked";
  $string["marking"] = "Marking";
  $string["pending"] = "Pending";
+ $string["status"] = "Status";
+ $string["submissionfeedbackheading"] = "Feedback";
 
  // Admin Settings
  $string["default"] = "Enabled by default";

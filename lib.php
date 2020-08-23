@@ -17,9 +17,7 @@
 /**
  * This file contains the moodle hooks for the feedback androidmarker plugin
  * @package   assignfeedback_androidmarker
- * @author Vinayak (Vin) Bhalerao (v-vibhal@microsoft.com)
- * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  Microsoft, Inc. (based on files by NetSpot {@link http://www.netspot.com.au})
+ * @author Thando Peter (thandopeter8@gmail.com)
  */
 defined('MOODLE_INTERNAL') || die();
 
