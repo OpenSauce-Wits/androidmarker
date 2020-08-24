@@ -11,36 +11,40 @@ contains a column to record the number of files.
     <TABLE NAME="assignfeedback_androidmarker" COMMENT="Info about Android Marker submissions for assignments.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="assignment_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="user_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="grade_item_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="grade" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="priority" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="status" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Status of the submission"/>
       </FIELDS>
       <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="The unique id for this submission info."/>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="The unique id for this feedback"/>
+        <KEY NAME="assignment" TYPE="foreign" FIELDS="assignment" REFTABLE="assign" REFFIELDS="id" COMMENT="The assignment instance this feedback relates to."/>
+        <KEY NAME="grade" TYPE="foreign" FIELDS="grade" REFTABLE="assign_grades" REFFIELDS="id" COMMENT="The grade instance this feedback relates to."/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="assign_submission" REFFIELDS="id" COMMENT="The user instance this feedback relates to."/>
       </KEYS>
     </TABLE>
 
     <TABLE NAME="androidmarker_testresult" COMMENT="Info about the Android Marker test results.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="assignment_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="user_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="testname" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The name of the test"/>
         <FIELD NAME="result" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Result of the marked test"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="fk_assignment" TYPE="foreign" FIELDS="assignment_id" REFTABLE="assignfeedback_androidmarker" REFFIELDS="assignment_id" COMMENT="The assignment instance this test relates to"/>
-        <KEY NAME="fk_user" TYPE="foreign" FIELDS="user_id" REFTABLE="assignfeedback_androidmarker" REFFIELDS="user_id"  COMMENT="The submission this file test relates to."/>
+        <KEY NAME="fk_assignment" TYPE="foreign" FIELDS="assignment" REFTABLE="assignfeedback_androidmarker" REFFIELDS="assignment" COMMENT="The assignment instance this test relates to"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="assignfeedback_androidmarker" REFFIELDS="userid"  COMMENT="The submission this file test relates to."/>
       </KEYS>
     </TABLE>
 
     <TABLE NAME="androidmarker_errors" COMMENT="Info about compilation errors while trying to compile the test classes.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="androidmarker_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="columnnumber" TYPE="int" LENGTH="4" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="linenumber" TYPE="int" LENGTH="5" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="message" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
@@ -49,7 +53,8 @@ contains a column to record the number of files.
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="fk_androidmarker" TYPE="foreign" FIELDS="androidmarker_id" REFTABLE="assignfeedback_androidmarker" REFFIELDS="id"/>
+        <KEY NAME="fk_assignment" TYPE="foreign" FIELDS="assignment" REFTABLE="assignfeedback_androidmarker" REFFIELDS="assignment" COMMENT="The assignment instance this test relates to"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="assignfeedback_androidmarker" REFFIELDS="userid"  COMMENT="The submission this file test relates to."/>
       </KEYS>
     </TABLE>
 

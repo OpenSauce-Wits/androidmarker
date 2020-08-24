@@ -65,7 +65,7 @@ class observer {
          // Even though the gui of moodle works with this line. It does not keep the attempt number
          }
 
-         $updateData = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('user_id' => $userid, 'assignment_id' => $assignmentid));
+         $updateData = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('userid' => $userid, 'assignment' => $assignmentid));
 
          if ($updateData) {
              // Update the assignfeedback_androidmarker table to Pending
@@ -78,13 +78,13 @@ class observer {
              //$DB->delete_records(self::TABLE_ANDROIDMARKER_COMPILATIONERROR, array("androidmarker_id" => $androidmarkerid));
 
              // Delete test results.
-             $DB->delete_records(self::TABLE_ANDROIDMARKER_TESTRESULT, array("assignment_id" => $assignmentid, "user_id" => $userid));
+             $DB->delete_records(self::TABLE_ANDROIDMARKER_TESTRESULT, array("assignment" => $assignmentid, "userid" => $userid));
          } else {
              $AssignmentGradeData = $DB->get_record('grade_items',array('iteminstance'=>$assignmentid));
              $updateData = new \stdClass();
-             $updateData->user_id = $userid;
-             $updateData->assignment_id = $assignmentid;
-             $updateData->grade_item_id = $AssignmentGradeData->id;
+             $updateData->userid = $userid;
+             $updateData->assignment = $assignmentid;
+             $updateData->grade = $AssignmentGradeData->id;
              $updateData->priority = 1;
              $updateData->status = get_string('pending', self::COMPONENT_NAME);
              $updateData->id = $DB->insert_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $updateData);
@@ -113,9 +113,9 @@ class observer {
          $data = array("submissiontype" => "StudentSubmission",
          "StudentZip" => $studentZIP,
          "id" => $updateData->id,
-         "grade_item_id" => $AssignmentGradeData->id,
-         "user_id" => $userid,
-         "assignment_id" => $assignmentid,
+         "grade" => $AssignmentGradeData->id,
+         "userid" => $userid,
+         "assignment" => $assignmentid,
          "priority" => $updateData->priority,
          "url" => $CFG->wwwroot . "/mod/assign/feedback/androidmarker/process_result.php");
 
