@@ -59,12 +59,12 @@ class observer {
          $submissionid = $event->get_record_snapshot($event->objecttable, $event->objectid)->submission;
          $userid = $event->userid;
          $AssignmentGradeData = $DB->get_record('grade_items',array('iteminstance'=>$assignmentid));
-         /*$DBassignGrades = $DB->get_record('assign_grades',array('userid' => $userid, 'assignment' => $assignmentid));
+         $DBassignGrades = $DB->get_record('assign_grades',array('userid' => $userid, 'assignment' => $assignmentid));
          if($DBassignGrades){
            $DBassignGrades->grade = NULL;
            $DB->update_record('assign_grades',$DBassignGrades);
          // Even though the gui of moodle works with this line. It does not keep the attempt number
-       }*/
+         }
          $DB->delete_records('grade_grades',array('userid' => $userid, 'itemid' => $AssignmentGradeData->id));
 
          $updateData = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('userid' => $userid, 'assignment' => $assignmentid));

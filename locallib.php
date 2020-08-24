@@ -429,8 +429,13 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
             $table->data[] = array($item_name, $item);
 
             foreach ($compilationerrors as $tr) {
-                $errorname = "";
-                $errorresult = html_writer::tag("h5", $tr->filename." | line ".$tr->line_number." : ".$tr->error);
+                $errorname = html_writer::tag("h5", "");
+                $tempString = $tr->filename;
+                if($tr->line_number !== "0"){
+                  $tempString.=" | line ".$tr->line_number;
+                }
+                $tempString.=" : ".$tr->error;
+                $errorresult = html_writer::tag("h5", $tempString);
                 $table->data[] = array($errorname, $errorresult);
             }
           }
