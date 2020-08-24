@@ -58,12 +58,14 @@ class observer {
          $assignmentid = $event->get_record_snapshot($event->objecttable, $event->objectid)->assignment;
          $submissionid = $event->get_record_snapshot($event->objecttable, $event->objectid)->submission;
          $userid = $event->userid;
-         $DBassignGrades = $DB->get_record('assign_grades',array('userid' => $userid, 'assignment' => $assignmentid));
+         $AssignmentGradeData = $DB->get_record('grade_items',array('iteminstance'=>$assignmentid));
+         /*$DBassignGrades = $DB->get_record('assign_grades',array('userid' => $userid, 'assignment' => $assignmentid));
          if($DBassignGrades){
            $DBassignGrades->grade = NULL;
            $DB->update_record('assign_grades',$DBassignGrades);
          // Even though the gui of moodle works with this line. It does not keep the attempt number
-         }
+       }*/
+         $DB->delete_records('grade_grades',array('userid' => $userid, 'itemid' => $AssignmentGradeData->id));
 
          $updateData = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('userid' => $userid, 'assignment' => $assignmentid));
 
@@ -75,7 +77,7 @@ class observer {
                                  $bulk=false);
 
              // Delete compilation errors.
-             //$DB->delete_records(self::TABLE_ANDROIDMARKER_COMPILATIONERROR, array("androidmarker_id" => $androidmarkerid));
+             $DB->delete_records(self::TABLE_ANDROIDMARKER_COMPILATIONERROR, array("assignment" => $assignmentid, "userid" => $userid));
 
              // Delete test results.
              $DB->delete_records(self::TABLE_ANDROIDMARKER_TESTRESULT, array("assignment" => $assignmentid, "userid" => $userid));
@@ -107,7 +109,6 @@ class observer {
 
          // Always base64_encode the files
          $studentZIP = base64_encode($studentZIP->get_content());
-         $AssignmentGradeData = $DB->get_record('grade_items',array('iteminstance'=>$assignmentid));
 
          // languageid, source, input, output and timelimit
          $data = array("submissiontype" => "StudentSubmission",

@@ -339,19 +339,19 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      * @param bool $showviewlink
      * @return string
      */
-    private function view_grading_summary(stdClass $user, & $showviewlink) {
+    private function view_grading_summary(stdClass $user, & $showviewlink) { // I do not know what is happening in this function
         global $DB;
         $showviewlink = true;
 
         $testresults = $DB->get_records(TABLE_ANDROIDMARKER_TESTRESULT, array("userid" => $userid, "assignment" => $this->assignment->get_instance()->id));
         $comperrorcount = $DB->count_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("userid" => $userid, "assignment" => $this->assignment->get_instance()->id));
-        $result = $this->get_testresult_percentage($testresults, $comperrorcount);
+        $result = $this->get_testresult_percentage($testresults);
         $result = html_writer::div($result, "feedbackandroidmarkergrading");
 
         return $result;
     }
 
-    private function get_testresult_percentage($testresults, $comperrorcount) {
+    private function get_testresult_percentage($testresults) {
         $testcount = 0;
         $succcount = 0;
         foreach ($testresults as $tr) {
@@ -363,10 +363,6 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         }
 
         $result = "";
-        /*if ($comperrorcount > 0) {
-            $result .= "Comp. Err.: " . $comperrorcount;
-            $result .= "<br>";
-        }*/
         if ($testcount > 0) {
             $percentage = round($succcount / $testcount, 1) * 100;
             $result .=  $percentage.'%';
@@ -407,52 +403,37 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
 
         // If the status is not equal to marking we can display the results.
         if($androidmarkersubmission->status !== get_string('marking', COMPONENT_NAME) &&
-           $androidmarkersubmission->status !== get_string('pending', COMPONENT_NAME)){
+          $androidmarkersubmission->status !== get_string('pending', COMPONENT_NAME)){
           $testresults = $DB->get_records(TABLE_ANDROIDMARKER_TESTRESULT, array("userid" => $userid, "assignment" => $this->assignment->get_instance()->id));
-          //$compilationerrors = $DB->get_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("androidmarker_id" => $androidmarkersubmission->id));
+          $compilationerrors = $DB->get_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("userid" => $userid, "assignment" => $this->assignment->get_instance()->id));
+          $compilationerrorcount = $DB->count_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("userid" => $userid, "assignment" => $this->assignment->get_instance()->id));
 
-
-          $item_name = "Overall results:";
+          $item_name = "Overall results";
           $item = "";
           $table->data[] = array($item_name, $item);
 
-          $item_name = "Percentage:";
-          $item = $this->get_testresult_percentage($testresults, 0);
-          $table->data[] = array($item_name, $item);
+          if($compilationerrorcount == 0){
+            $item_name = "Percentage:";
+            $item = $this->get_testresult_percentage($testresults);
+            $table->data[] = array($item_name, $item);
 
-          foreach ($testresults as $tr) {
-              $testname = html_writer::tag("h5", $tr->testname);
-              $testresult = html_writer::tag("h5", $tr->result);
-
-              $item_name = $testname;
-              $item = $testresult;
-              $table->data[] = array($item_name, $item);
+            foreach ($testresults as $tr) {
+                $testname = html_writer::tag("h5", $tr->testname);
+                $testresult = html_writer::tag("h5", $tr->result);
+                $table->data[] = array($testname, $testresult);
+            }
           }
+          else{
+            $item_name = "Compilation Errors";
+            $item = "";
+            $table->data[] = array($item_name, $item);
 
-          /*if ($compilationerrors) {
-              $html .= html_writer::tag("h6", "Compilation errors");
-              foreach ($compilationerrors as $ce) {
-                  $tmpdiv = html_writer::div("Filename:", "failedtestsidebar");
-                  $tmpdiv .= html_writer::div($ce->filename, "failedtestcontent");
-                  $html .= html_writer::div($tmpdiv, "failedTestWrapper");
-
-                  $tmpdiv = html_writer::div("Message:", "failedtestsidebar");
-                  $tmpdiv .= html_writer::div($ce->message, "failedtestcontent");
-                  $html .= html_writer::div($tmpdiv, "failedTestWrapper");
-
-                  $tmpdiv = html_writer::div("Column-No.:", "failedtestsidebar");
-                  $tmpdiv .= html_writer::div($ce->columnnumber, "failedtestcontent");
-                  $html .= html_writer::div($tmpdiv, "failedTestWrapper");
-
-                  $tmpdiv = html_writer::div("Line-No.:", "failedtestsidebar");
-                  $tmpdiv .= html_writer::div($ce->linenumber, "failedtestcontent");
-                  $html .= html_writer::div($tmpdiv, "failedTestWrapper");
-
-                  $tmpdiv = html_writer::div("Position:", "failedtestsidebar");
-                  $tmpdiv .= html_writer::div($ce->position, "failedtestcontent");
-                  $html .= html_writer::div($tmpdiv, "failedTestWrapper");
-              }
-          }*/
+            foreach ($compilationerrors as $tr) {
+                $errorname = "";
+                $errorresult = html_writer::tag("h5", $tr->filename." | line ".$tr->line_number." : ".$tr->error);
+                $table->data[] = array($errorname, $errorresult);
+            }
+          }
         }
         $html .= html_writer::table($table);
         return $html;
@@ -564,7 +545,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
                             $bulk=false);
 
         // Delete compilation errors.
-        //$DB->delete_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("androidmarker_id" => $androidmarkerid));
+        $DB->delete_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("assignment" => $assignmentid, "userid" => $userid));
 
         // Delete test results.
         $DB->delete_records(TABLE_ANDROIDMARKER_TESTRESULT, array("assignment" => $assignmentid, "userid" => $userid));
@@ -579,7 +560,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      */
     public function is_empty(stdClass $grade) {
       global $DB;
-      //If a plugin has no submission data to show - it can return true 
+      //If a plugin has no submission data to show - it can return true
       $result = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,array("assignment" => $this->assignment->get_instance()->id, "userid" => $grade->userid));
       if($result){
         return false;

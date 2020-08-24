@@ -29,20 +29,34 @@
     // This code should be executed when the server returns the marked results
     $NumTests = 0;
     $PassedTests = 0;
-    foreach ($Results as $tr) {
-        $res = explode(' ',$tr);
-        // Test result.
-        $testData = new \stdClass();
-        $testData->userid = $updateData->userid;
-        $testData->assignment = $updateData->assignment;
-        $testData->testname = $res[0];
-        $testData->result = $res[1];
-        $DB->insert_record(TABLE_ANDROIDMARKER_TESTRESULT, $testData);
+    if($input['resulttype'] == 'tests'){
+      foreach ($Results as $tr) {
+          $res = explode(' ',$tr);
+          // Test result.
+          $testData = new \stdClass();
+          $testData->userid = $updateData->userid;
+          $testData->assignment = $updateData->assignment;
+          $testData->testname = $res[0];
+          $testData->result = $res[1];
+          $DB->insert_record(TABLE_ANDROIDMARKER_TESTRESULT, $testData);
 
-        if($res[1] == 'passed'){
-          $PassedTests+=1;
-        }
-        $NumTests+=1;
+          if($res[1] == 'passed'){
+            $PassedTests+=1;
+          }
+          $NumTests+=1;
+      }
+    }
+    else if($input['resulttype'] == 'errors'){
+      foreach ($Results as $tr) {
+          // Error.
+          $errorData = new \stdClass();
+          $errorData->userid = $updateData->userid;
+          $errorData->assignment = $updateData->assignment;
+          $errorData->filename = $tr['filename'];
+          $errorData->error = $tr['error'];
+          $errorData->line_number = $tr['line_number'];
+          $DB->insert_record(TABLE_ANDROIDMARKER_COMPILATIONERROR, $errorData);
+      }
     }
 
     // Update the assignfeedback_androidmarker table to Marked
@@ -50,20 +64,6 @@
     $DB->update_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,
                         $updateData,
                         $bulk=false);
-
-    // $compilationerrors = $results->compilationErrors;
-    // foreach ($compilationerrors as $ce) {
-    // 		// Compilation error.
-    // 		$compilationerror = new stdClass();
-    // 		$compilationerror->columnnumber = $ce->columnNumber;
-    // 		$compilationerror->linenumber = $ce->lineNumber;
-    // 		$compilationerror->message = $ce->message;
-    // 		$compilationerror->position = $ce->position;
-    // 		$compilationerror->filename = $ce->javaFileName;
-    // 		$compilationerror->androidmarker_id = $androidmarkersubmission->id;
-    //
-    // 		$compilationerror->id = $DB->insert_record(TABLE_ANDROIDMARKER_COMPILATIONERROR, $compilationerror);
-    // }
 
     $updateData = $DB->get_record('assign_submission', array('userid' => $UserID, 'assignment' => $AssignmentID));
     //$updateData->status = 'marked';
@@ -77,7 +77,12 @@
     | feedbackformat | information | informationformat | timecreated
     | timemodified | aggregationstatus | aggregationweight |*/
     if($input['submissiontype'] == 'StudentSubmission'){
-      $Percentage = ($PassedTests*100)/$NumTests;
+      if($NumTests == 0){
+        $Percentage=0;
+      }
+      else{
+        $Percentage = ($PassedTests*100)/$NumTests;
+      }
       $cmid = $input['grade'];
       $gradeInsert = $DB->get_record('grade_grades', array('userid' => $UserID, 'itemid' => $cmid));
       if($gradeInsert){
@@ -130,11 +135,6 @@
         $DB->insert_record('assign_grades',
                             $assignGradeInsert);
       }
-
-      /*
-      $urlparams = array('id' => $cmid->id, 'action' => 'grading');
-      $url = new moodle_url('/mod/assign/view.php', $urlparams);
-      redirect($url, get_string('marked',COMPONENT_NAME));*/
     }
   }
 ?>
