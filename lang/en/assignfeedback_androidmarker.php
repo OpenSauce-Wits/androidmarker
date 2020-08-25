@@ -64,8 +64,11 @@
  // Lecturer Server settings
  $string["runmarker"] = "Run Marker";
  $string["stopmarker"] = "Stop Marker";
- $string["remarkallprojects"] = "Remark Projects";
- $string['marksubmissions'] = 'Mark Android project submissions';
+ $string["remarkallprojects"] = "Remark All Projects";
+ $string["remarkallnotice"] = "Remarking all the projects will take a long time.\nAre you sure you want to continue?";
+ $string['remarkstudent'] = "Remark Submission";
+ $string["remarkstudentnotice"] = "Remarking this submission will erase it's grade and results.\nAre you sure you want to continue?";
+ $string['marksubmissions'] = "Mark Android project submissions";
 
 $string['countfiles'] = 'OneNotes: {$a}';
 $string['maxbytes'] = 'Maximum OneNote package size';

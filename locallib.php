@@ -222,10 +222,18 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
      * @return bool true if elements were added to the form
      */
     public function get_form_elements_for_user($grade, MoodleQuickForm $mform, stdClass $data, $userid) {
-      // This function shows output in the grader form. where you can save and next and stuff for each individual student
+        $cmid = $this->assignment->get_course_module()->id;
+        $Assignmentid = $this->assignment->get_instance()->id;
+        // This function shows output in the grader form. where you can save and next and stuff for each individual student
         $mform->addElement('header', 'pluginname', get_string('pluginname', COMPONENT_NAME));
         $output = $this->view_submission_summary($userid);
         $mform->addElement('html', $output);
+
+        // Mark Submission buttons
+        $url = new moodle_url('/mod/assign/feedback/androidmarker/remark.php', array( 'id' => $cmid, 'userid' => $userid, 'assignment' => $Assignmentid));
+        $output = "<a href='$url' class='btn btn-primary' type='button'>" . get_string('remarkstudent', COMPONENT_NAME) . "</a>";
+        $mform->addElement('html', $output);
+
 
         return true;
     }
@@ -296,7 +304,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
 
     /**
      * Shows Test case information in the lecturer view
-     * Shows the 'test cases management' and 'rejudge all' buttons.
+     * Shows the'remark all' button.
      * @return string
      * @throws coding_exception
      * @throws moodle_exception
@@ -319,13 +327,8 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
             //     $output .= '</div>';
             // }
 
-            $urlparams = array('id' => $cmid, 'a' => $this->assignment->get_instance()->id);
-            // Should change to stop marking when marking
-            $url = new moodle_url('/mod/assign/feedback/onlinejudge/rejudge.php', array('id' => $cmid, 'a' => $this->assignment->get_instance()->id));
-            $output .= "<a href='$url' class='btn btn-info' type='button'>" . get_string('runmarker', 'assignfeedback_androidmarker') . "</a>";
-
-            $url = new moodle_url('/mod/assign/feedback/onlinejudge/rejudge.php', array('id' => $cmid, 'a' => $this->assignment->get_instance()->id));
-            $output .= "<a href='$url' class='btn btn-info' type='button'>" . get_string('remarkallprojects', 'assignfeedback_androidmarker') . "</a>";
+            $url = new moodle_url('/mod/assign/feedback/androidmarker/remark.php', array('id' => $cmid, 'assignment' => $this->assignment->get_instance()->id));
+            $output .= "<a href='$url' class='btn btn-primary' type='button'>" . get_string('remarkallprojects', 'assignfeedback_androidmarker') . "</a>";
         //}
         $output .= '</div>';
         return $output;
