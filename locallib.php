@@ -19,6 +19,7 @@
  * @package   assignfeedback_androidmarker
  * @author Thando Peter (thandopeter8@gmail.com)
    @author Molefe Molefe (molefemolefe45@gmail.com)
+   @author Olebogeng Maleho (olebogengmaleho98@gmail.com)
  */
 
 defined('MOODLE_INTERNAL') || die();
