@@ -18,6 +18,7 @@
  * This file contains the definition for the library class for androidmarker feedback plugin
  * @package   assignfeedback_androidmarker
  * @author Thando Peter (thandopeter8@gmail.com)
+   @author Molefe Molefe (molefemolefe45@gmail.com)
  */
 
 defined('MOODLE_INTERNAL') || die();
