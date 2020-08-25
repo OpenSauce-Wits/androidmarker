@@ -38,7 +38,7 @@ require_once($CFG->dirroot.'/mod/assign/tests/privacy_test.php');
 class assignfeedback_onenote_privacy_testcase extends \mod_assign\tests\mod_assign_privacy_testcase {
 
     /**
-     * Quick test to make sure that get_metadata returns something.
+     * Test to ensure get_metadata returns something.
      */
     public function test_get_metadata() {
         $collection = new \core_privacy\local\metadata\collection('assignfeedback_onenote');
