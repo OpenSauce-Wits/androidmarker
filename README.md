@@ -22,3 +22,5 @@ This is a plugin that provides feedback for JUnit/Instrumented tests for Android
 
 ## Installation
 - Move file to the mod/assign/feedback/ directory in your Moodle directory 
+
+[![Coverage Status](https://coveralls.io/repos/github/OpenSauce-Wits/androidmarker/badge.svg?branch=master)](https://coveralls.io/github/OpenSauce-Wits/androidmarker?branch=master)
