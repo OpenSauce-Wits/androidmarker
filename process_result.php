@@ -9,6 +9,7 @@
 
   $input = json_decode($inputJSON, TRUE);        // Decode the JSON object
 
+  //assigning feedback type, user ID, and assignment ID for saving results
   $FeedbackType = $input['feedbacktype'];
   $UserID = $input['userid'];
   $AssignmentID = $input['assignment'];
@@ -48,7 +49,7 @@
     }
     else if($input['resulttype'] == 'errors'){
       foreach ($Results as $tr) {
-          // Error.
+          // This is returned in the case of error.
           $errorData = new \stdClass();
           $errorData->userid = $updateData->userid;
           $errorData->assignment = $updateData->assignment;

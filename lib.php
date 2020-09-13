@@ -58,7 +58,7 @@ function assignfeedback_androidmarker_pluginfile($course, $cm, context $context,
         return false;
     }
 
-    // Check is users feedback or has grading permission.
+    // Checks if user is feedback or has grading permission.
     if ($USER->id != $userid and !has_capability('mod/assign:grade', $context)) {
         return false;
     }

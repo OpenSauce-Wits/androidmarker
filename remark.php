@@ -36,6 +36,7 @@ if ($id) {
 
 require_login($course, true, $cm);
 
+#assigning grade capability
 $context = context_course::instance($cm->course);
 require_capability('mod/assign:grade', $context);
 

@@ -1,3 +1,4 @@
+#php coveralls testing framework describing jobs, dependencies, and tasks
 name: PHP Composer
 
 on:
