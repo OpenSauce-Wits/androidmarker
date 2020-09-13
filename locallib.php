@@ -406,7 +406,9 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
 
         // If the status is not equal to marking we can display the results.
         if($androidmarkersubmission->status !== get_string('marking', COMPONENT_NAME) &&
-          $androidmarkersubmission->status !== get_string('pending', COMPONENT_NAME)){
+          $androidmarkersubmission->status !== get_string('pending', COMPONENT_NAME) &&
+            $androidmarkersubmission->status !== get_string('building', COMPONENT_NAME) &&
+              $androidmarkersubmission->status !== get_string('built', COMPONENT_NAME)){
           $testresults = $DB->get_records(TABLE_ANDROIDMARKER_TESTRESULT, array("userid" => $userid, "assignment" => $this->assignment->get_instance()->id));
           $compilationerrors = $DB->get_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("userid" => $userid, "assignment" => $this->assignment->get_instance()->id));
           $compilationerrorcount = $DB->count_records(TABLE_ANDROIDMARKER_COMPILATIONERROR, array("userid" => $userid, "assignment" => $this->assignment->get_instance()->id));

@@ -52,6 +52,8 @@
  $string["marked"] = "Marked";
  $string["marking"] = "Marking";
  $string["pending"] = "Pending";
+ $string["built"] = "Built";
+ $string["building"] = "Building";
  $string["status"] = "Status";
  $string["submissionfeedbackheading"] = "Feedback";
 
