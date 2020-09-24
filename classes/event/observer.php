@@ -30,6 +30,11 @@ class observer {
     const TABLE_ANDROIDMARKER_TESTRESULT = "androidmarker_testresult";
     const TABLE_ANDROIDMARKER_COMPILATIONERROR = "androidmarker_errors";
 
+    // File area for androidmarker Android project to be uploaded by the teacher.
+    const ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP = "zip_androidmarker";
+    // File area for androidmarker requirements document to be uploaded by the teacher
+    const ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC = "doc_androidmarker";
+
     const COMPONENT_NAME = "assignfeedback_androidmarker";
 
     /**
@@ -47,6 +52,81 @@ class observer {
     public static function submission_updated(\mod_assign\event\submission_updated $event) {
         self::enter_student_record($event);
     }
+
+    /**
+     * Listen to events and queue the submission for processing.
+     * @param \mod_assign\event\submission_updated $event
+     */
+    public static function lecturer_resubmit(\mod_assign\event\submission_updated $event) {
+        self::resubmit_lecturer_submission($event);
+    }
+
+    /**
+     * Enter student submission into TABLE_ASSIGNFEEDBACK_ANDROIDMARKER
+     * @param \mod_assign\event\base $event The submission created/updated event.
+     */
+     // The lecturer submitting a helping file might end up here
+     protected static function resubmit_lecturer_submission($event) {
+         global $DB, $CFG;
+         $assignmentid = $event->other['assignmentid'];
+         $userid = $event->userid;
+
+         $updateData = $DB->get_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('userid' => $userid, 'assignment' => $assignmentid));
+
+         // Update the assignfeedback_androidmarker table to Pending
+         $updateData->status = get_string('pending', self::COMPONENT_NAME);
+         $DB->update_record(self::TABLE_ASSIGNFEEDBACK_ANDROIDMARKER,
+                             $updateData,
+                             $bulk=false);
+
+         // Delete compilation errors.
+         $DB->delete_records(self::TABLE_ANDROIDMARKER_COMPILATIONERROR, array("assignment" => $assignmentid, "userid" => $userid));
+
+         // Delete test results.
+         $DB->delete_records(self::TABLE_ANDROIDMARKER_TESTRESULT, array("assignment" => $assignmentid, "userid" => $userid));
+
+         $fs = get_file_storage();
+
+         $fileDOC = $fs->get_area_files($event->contextid,
+             self::COMPONENT_NAME,
+             self::ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_DOC,
+             0,
+             'id',
+             false);
+
+         $fileZIP = $fs->get_area_files($event->contextid,
+             self::COMPONENT_NAME,
+             self::ASSIGNFEEDBACK_ANDROIDMARKER_FILEAREA_ZIP,
+             0,
+             'id',
+             false);
+
+         if (empty($fileZIP) || empty($fileDOC)) {
+             \core\notification::warning(get_string("no_files_warning", COMPONENT_NAME));
+             return true;
+         }
+
+         // Send the submission to the marker
+         $fileDOC = reset($fileDOC);
+         $fileZIP = reset($fileZIP);
+
+         // Always base64_encode the files
+         $fileDOC = base64_encode($fileDOC->get_content());
+         $fileZIP = base64_encode($fileZIP->get_content());
+
+         // languageid, source, input, output and timelimit
+         $data = array("submissiontype" => "LecturerSubmission",
+         "id" => $updateData->id,
+         "RequiredDocuments" => $fileDOC,
+         "LecturerZip" => $fileZIP,
+         "userid" => $userid,
+         "grade" => -1,
+         "assignment" => $assignmentid,
+         "priority" => $updateData->priority,
+         "url" => $CFG->wwwroot . "/mod/assign/feedback/androidmarker/process_result.php");
+
+         send_submission($data);
+     }
 
     /**
      * Enter student submission into TABLE_ASSIGNFEEDBACK_ANDROIDMARKER

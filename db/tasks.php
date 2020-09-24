@@ -25,15 +25,3 @@
 defined('MOODLE_INTERNAL') || die();
 
 /* List of handlers */
-
-$tasks = array(
-    array(
-        'classname' => 'assignfeedback_androidmarker\task\mark_submissions',
-        'blocking' => 0,
-        'minute' => '*',
-        'hour' => '*',
-        'day' => '*',
-        'dayofweek' => '*',
-        'month' => '*'
-    ),
-);

@@ -4,11 +4,13 @@ require_once('../../../../config.php');
 defined('MOODLE_INTERNAL') || die();
 
 require_once(dirname(__FILE__) . "/lib.php");
+//require_once(dirname(__FILE__) . "/locallib.php");
 
 $id = optional_param('id', 0, PARAM_INT);
-$userid = optional_param('userid', 0, PARAM_INT);  // Course Module ID
-$Assignmentid = optional_param('assignment', 0, PARAM_INT);   // Assignment ID
-$confirm = optional_param('confirm', 0, PARAM_INT);   // Force to rejudge
+$userid = optional_param('userid', 0, PARAM_INT); // Course Module ID
+$Assignmentid = optional_param('assignment', 0, PARAM_INT); // Assignment ID
+$RemarkType = optional_param('remarktype', 0, PARAM_INT);
+$confirm = optional_param('confirm', 0, PARAM_INT); // Force to rejudge
 
 if ($id) {
     if (!$cm = get_coursemodule_from_id('assign', $id)) {
@@ -42,17 +44,27 @@ require_capability('mod/assign:grade', $context);
 
 if($userid){
   $optionsno = array('id' => $id, 'action' => 'grader', 'userid' => $userid);
-  $optionsyes = array('id' => $id, 'userid' => $userid, 'assignment' => $Assignmentid, 'confirm' => 1, 'sesskey' => sesskey());
+  if ($RemarkType == 'RemarkLecturerSubmission') {
+    $optionsno = array('id' => $id);
+    $optionsyes = array('id' => $id, 'userid' => $userid, 'assignment' => $Assignmentid, 'confirm' => 1, 'remarktype' => 'RemarkLecturerSubmission', 'sesskey' => sesskey());
+  }
+  else $optionsyes = array('id' => $id, 'userid' => $userid, 'assignment' => $Assignmentid, 'confirm' => 1, 'sesskey' => sesskey());
   $NoURL = new moodle_url('../../view.php', $optionsno);
   if ($confirm == 1 && confirm_sesskey()) {
-     mark_submission($userid, $Assignmentid, $cm, $course);
-     redirect($NoURL);
+    if ($RemarkType == 'RemarkLecturerSubmission') {
+      mark_lecturer_submission( $userid, $Assignmentid, $cm, $course);
+    }
+    else mark_submission($userid, $Assignmentid, $cm, $course);
+    redirect($NoURL);
   }
   else{
 
     echo $OUTPUT->header();
     echo $OUTPUT->heading(get_string('remarkstudent', COMPONENT_NAME));
-    echo $OUTPUT->confirm(get_string('remarkstudentnotice', COMPONENT_NAME), new moodle_url('remark.php', $optionsyes), $NoURL);
+    if ($RemarkType == 'RemarkLecturerSubmission') {
+      echo $OUTPUT->confirm(get_string('remarklecturernotice', COMPONENT_NAME), new moodle_url('remark.php', $optionsyes), $NoURL);
+    }
+    else echo $OUTPUT->confirm(get_string('remarkstudentnotice', COMPONENT_NAME), new moodle_url('remark.php', $optionsyes), $NoURL);
     echo $OUTPUT->footer();
   }
 }
@@ -63,7 +75,11 @@ else{
   if ($confirm == 1 && confirm_sesskey()) {
     // Mark All submissions
     // get all the andriodmarker records that do not have a priority of -1 and have assignmentid of $Assignid
+    $AssignSubmission = $DB->get_records(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('assignment' => $Assignmentid));
     // Feed them to the mark_submission function.
+    foreach ($AssignSubmission as $Submission) {
+      if( $Submission->priority !== '-1' ) mark_submission($Submission->userid, $Assignmentid, $cm, $course);
+    }
     redirect($NoURL, get_string('remarkallsent', COMPONENT_NAME), 10, \core\output\notification::NOTIFY_SUCCESS);
   }
   else{
@@ -95,6 +111,27 @@ function mark_submission( $UserID, $Assignid, $cm, $course){
       )
   );
   $event = \assignsubmission_file\event\submission_updated::create($params);
-  //$event->set_assign($filesubmission);
+  $event->trigger();
+}
+
+function mark_lecturer_submission( $UserID, $Assignid, $cm, $course){
+  global $DB;
+  $record = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array('userid' => $UserID, 'assignment' => $Assignid));
+  $params = array(
+      'context' => context_module::instance($cm->id),
+      'courseid' => $course->id,
+      'objectid' => $record->id,
+      'userid' => $UserID,
+      'other' => array(
+          'submissionid' => 0,
+          'submissionattempt' => 0,
+          'submissionstatus' => 'Pending',
+          'filesubmissioncount' => 2,
+          'groupid' => 0,
+          'assignmentid' => $Assignid,
+          'groupname' => ""
+      )
+  );
+  $event = \assignfeedback_androidmarker\event\lecturer_resubmit::create($params);
   $event->trigger();
 }

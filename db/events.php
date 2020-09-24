@@ -32,4 +32,8 @@ $observers = array(
         'eventname'   => 'assignsubmission_file\event\submission_updated',
         'callback'    => '\assignfeedback_androidmarker\event\observer::submission_updated',
     ),
+    array(
+        'eventname'   => 'assignfeedback_androidmarker\event\lecturer_resubmit',
+        'callback'    => '\assignfeedback_androidmarker\event\observer::lecturer_resubmit',
+    ),
 );

@@ -143,7 +143,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
                 \core\notification::warning(get_string("no_files_warning", COMPONENT_NAME));
                 return true;
             }
-            $AssignmentGradeData = $DB->get_record('grade_items',array('iteminstance'=>$this->assignment->get_instance()->id));
+
             $updateData = $this->insert_assignment_submission( $USER->id, -1, $this->assignment->get_instance()->id, -1);// Delete records
 
             // Send the submission to the marker
@@ -232,10 +232,9 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         $mform->addElement('html', $output);
 
         // Mark Submission buttons
-        $url = new moodle_url('/mod/assign/feedback/androidmarker/remark.php', array( 'id' => $cmid, 'userid' => $userid, 'assignment' => $Assignmentid));
+        $url = new moodle_url('/mod/assign/feedback/androidmarker/remark.php', array( 'id' => $cmid, 'userid' => $userid, 'assignment' => $Assignmentid, 'remarktype' => 'RemarkStudentSubmission'));
         $output = "<a href='$url' class='btn btn-primary' type='button'>" . get_string('remarkstudent', COMPONENT_NAME) . "</a>";
         $mform->addElement('html', $output);
-
 
         return true;
     }
@@ -268,17 +267,13 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
           $this->delete_test_data($assignmentid, $userid);
       } else {
 
-          //  $userid = required_param('userid', PARAM_INT);
-        //'userid' => $submission->userid
-      //   $submission = $this->assignment->get_user_submission($grade->userid, false);
-
-          $androidmarkersubmission = new stdClass();
-          $androidmarkersubmission->userid = $userid;
-          $androidmarkersubmission->assignment = $assignmentid;
-          $androidmarkersubmission->grade = $cmid;
-          $androidmarkersubmission->priority = $priority;
-          $androidmarkersubmission->status = get_string('pending', COMPONENT_NAME);
-          $androidmarkersubmission->id = $DB->insert_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $androidmarkersubmission);
+        $androidmarkersubmission = new stdClass();
+        $androidmarkersubmission->userid = $userid;
+        $androidmarkersubmission->assignment = $assignmentid;
+        $androidmarkersubmission->grade = $cmid;
+        $androidmarkersubmission->priority = $priority;
+        $androidmarkersubmission->status = get_string('pending', COMPONENT_NAME);
+        $androidmarkersubmission->id = $DB->insert_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, $androidmarkersubmission);
       }
 
       return $androidmarkersubmission;
@@ -321,17 +316,15 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         $output = $this->view_submission_summary($USER->id);
         $output .= '<div class="p-y-2">';
 
-        //if (has_capability('mod/assign:grade', $course_context)) {
-            // if (empty(get_testcases($this->assignment->get_instance()->id))) {
-            //     $message = get_string('testcasesrequired', 'assignfeedback_onlinejudge');
-            //     $output .= '<div class="alert alert-warning">';
-            //     $output .= $message;
-            //     $output .= '</div>';
-            // }
+        $cmid = $this->assignment->get_course_module()->id;
+        $Assignmentid = $this->assignment->get_instance()->id;
 
-            $url = new moodle_url('/mod/assign/feedback/androidmarker/remark.php', array('id' => $cmid, 'assignment' => $this->assignment->get_instance()->id));
-            $output .= "<a href='$url' class='btn btn-primary' type='button'>" . get_string('remarkallprojects', 'assignfeedback_androidmarker') . "</a>";
-        //}
+        $urlLecturerSubmission = new moodle_url('/mod/assign/feedback/androidmarker/remark.php', array( 'id' => $cmid, 'userid' => $USER->id, 'assignment' => $Assignmentid, 'remarktype' => 'RemarkLecturerSubmission'));
+        $output .= "<a href='$urlLecturerSubmission' class='btn btn-primary' type='button'>" . get_string('remarkstudent', COMPONENT_NAME) . "</a>";
+
+        $urlAllSubmissions = new moodle_url('/mod/assign/feedback/androidmarker/remark.php', array('id' => $cmid, 'assignment' => $Assignmentid, 'remarktype' => 'RemarkAllSubmissions'));
+        $output .= "<a href='$urlAllSubmissions' class='btn btn-primary' type='button'>" . get_string('remarkallprojects', COMPONENT_NAME) . "</a>";
+
         $output .= '</div>';
         return $output;
       }
@@ -542,7 +535,7 @@ class assign_feedback_androidmarker extends assign_feedback_plugin {
         return true;
     }
 
-    private function delete_test_data($assignmentid, $userid) {
+    public function delete_test_data($assignmentid, $userid) {
         global $DB;
 
         $updateData = $DB->get_record(TABLE_ASSIGNFEEDBACK_ANDROIDMARKER, array("assignment" => $assignmentid, "userid" => $userid), "id", IGNORE_MISSING);

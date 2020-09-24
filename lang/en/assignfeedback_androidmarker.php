@@ -67,9 +67,10 @@
  $string["runmarker"] = "Run Marker";
  $string["stopmarker"] = "Stop Marker";
  $string["remarkallprojects"] = "Remark All Projects";
- $string["remarkallnotice"] = "Remarking all the projects will take a long time.\nAre you sure you want to continue?";
+ $string["remarkallnotice"] = "Remarking all the projects will take a long time. It may take some time to send all the submissions to the server. \nAre you sure you want to continue?";
  $string['remarkstudent'] = "Remark Submission";
  $string["remarkstudentnotice"] = "Remarking this submission will erase it's grade and results.\nAre you sure you want to continue?";
+ $string["remarklecturernotice"] = "Remarking this submission will erase it's grade and results.\nStudent submission that have already been marked may be invalid. \nAre you sure you want to continue?";
  $string['marksubmissions'] = "Mark Android project submissions";
 
 $string['countfiles'] = 'OneNotes: {$a}';
